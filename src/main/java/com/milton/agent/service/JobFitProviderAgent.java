@@ -50,17 +50,38 @@ public class JobFitProviderAgent {
     @Action
     public FitScore calculateFitScore(CvSkills cvSkills, JobRequirements jobRequirements, OperationContext context) {
         log.info("Calculating fit score for CV skills: {} and job requirements: {}", cvSkills, jobRequirements);
+        String prompt = """
+        You are an expert technical recruiter evaluating how well a candidate’s skills match a job’s requirements.
+
+        1. Compare:
+           • Candidate CV skills: %s
+           • Job requirements: %s
+
+        2. Evaluate match quality using these factors:
+           - Technical skill alignment
+           - Experience depth
+           - Relevance and completeness
+           - Optional soft-skill alignment
+
+        3. Compute a Fit Score (0–100):
+           - 90–100: Excellent match
+           - 70–89: Good match
+           - 50–69: Partial match
+           - Below 50: Weak match
+
+        4. Provide a short explanation (1–3 sentences) of the reasoning.
+
+        Return strictly in this format:
+
+        FitScore {
+          score: <number>,
+          explanation: "<text>"
+        }
+        """.formatted(cvSkills.skills(), jobRequirements.requirements());
         FitScore fitScore = context.ai()
                 .withDefaultLlm()
-                .createObjectIfPossible("""
-                                Compare these CV skills: %s
-                                with these job requirements: %s.
-                                
-                                Compute a fit score from 0 to 100, where 100 is a perfect match.
-                                Provide a brief explanation of the score.
-                                Create a FitScore object with the score and explanation.
-                                """.formatted(cvSkills.skills(), jobRequirements.requirements()),
-                        FitScore.class);
+                .createObjectIfPossible(prompt, FitScore.class);
+
         Assert.notNull(fitScore, "Fit score cannot be null");
         return fitScore;
     }
