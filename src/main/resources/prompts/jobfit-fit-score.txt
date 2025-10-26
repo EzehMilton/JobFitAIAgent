@@ -16,7 +16,7 @@ You are an expert technical recruiter evaluating how well a candidate’s skills
    - 50–69: Partial match
    - Below 50: Weak match
 
-4. Provide a short explanation (1–3 sentences) of the reasoning.
+4. Provide a thorough explanation (maximum 200 words) of the reasoning. When responding, address the candidate that uploaded their CV. If you are unsure of their name, then use 'You"'
 
 Return strictly in this format:
 
