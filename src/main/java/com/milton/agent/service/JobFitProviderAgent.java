@@ -31,7 +31,7 @@ public class JobFitProviderAgent {
         log.info("Extracting key skills from CV" );
         CvSkills cvSkills = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5_MINI)
+                        .withModel(OpenAiModels.GPT_41_NANO)
                         .withTemperature(0.0)
                 )
                 .createObjectIfPossible("""
@@ -47,7 +47,7 @@ public class JobFitProviderAgent {
         log.info("Extracting a list of key requirements from job description");
         JobRequirements requirements = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5_MINI)
+                        .withModel(OpenAiModels.GPT_41_NANO)
                         .withTemperature(0.0)
                 )
                 .createObjectIfPossible(
