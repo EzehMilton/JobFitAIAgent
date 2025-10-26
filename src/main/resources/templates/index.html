@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Fit Scorer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --card-shadow: 0 10px 40px rgba(0,0,0,.08);
+            --card-shadow-hover: 0 15px 50px rgba(0,0,0,.12);
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+
+        .main-card {
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+            border: none;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .main-card:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .card-header-custom {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2.5rem 2rem;
+            border: none;
+        }
+
+        .card-header-custom h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .card-header-custom .subtitle {
+            opacity: 0.9;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+            font-weight: 400;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-label i {
+            color: #667eea;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            background: #f7fafc;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload-wrapper:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-upload-label {
+            cursor: pointer;
+            display: block;
+        }
+
+        .file-upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .btn-generate {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 0.875rem 2.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            color: white;
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.6;
+            transform: none;
+        }
+
+        .score-section {
+            background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .score-circle {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--primary-gradient);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            position: relative;
+            animation: scoreAppear 0.6s ease-out;
+        }
+
+        @keyframes scoreAppear {
+            from {
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
+        }
+
+        .score-info {
+            flex: 1;
+        }
+
+        .score-label {
+            font-size: 0.875rem;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .score-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge-match {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.bg-success {
+            background: var(--success-gradient) !important;
+        }
+
+        .badge.bg-info {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%) !important;
+        }
+
+        .badge.bg-warning {
+            background: var(--warning-gradient) !important;
+        }
+
+        .badge.bg-danger {
+            background: linear-gradient(135deg, #f2709c 0%, #ff9472 100%) !important;
+        }
+
+        .explanation-box {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .explanation-box h2 {
+            color: #2d3748;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .explanation {
+            color: #4a5568;
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        .score-legend {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .score-legend ul {
+            margin-bottom: 0;
+            padding-left: 1.5rem;
+        }
+
+        .score-legend li {
+            margin-bottom: 0.5rem;
+            color: #4a5568;
+        }
+
+        .btn-reset {
+            border: 2px solid #e2e8f0;
+            color: #4a5568;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-reset:hover {
+            background: #f7fafc;
+            border-color: #cbd5e0;
+            color: #2d3748;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1050;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 3rem 4rem;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+        }
+
+        .spinner-custom {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f4f6;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-content h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-content p {
+            color: #718096;
+            margin: 0;
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            color: #c53030;
+        }
+
+        .footer-text {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .d-none {
+            display: none !important;
+        }
+
+        .info-note {
+            background: linear-gradient(135deg, #ebf4ff 0%, #e0e7ff 100%);
+            border-left: 4px solid #667eea;
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            color: #4c51bf;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .file-name-display {
+            background: #edf2f7;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-top: 0.75rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #2d3748;
+        }
+
+        .file-name-display.show {
+            display: flex;
+        }
+
+        .file-name-display i {
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .card-header-custom {
+                padding: 2rem 1.5rem;
+            }
+
+            .score-circle {
+                width: 100px;
+                height: 100px;
+                font-size: 2rem;
+            }
+
+            .score-section {
+                padding: 1.5rem;
+            }
+
+            .loading-content {
+                padding: 2rem;
+                margin: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <div class="main-card">
+                <div class="card-header-custom">
+                    <h1>
+                        <i class="fas fa-chart-line"></i>
+                        Job Fit Scorer
+                    </h1>
+                    <div class="subtitle">Analyze your CV against job requirements with AI-powered insights</div>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <div th:if="${error}" class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span th:text="${error}"></span>
+                    </div>
+
+                    <form id="scoreForm" th:action="@{/generate}" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        <div class="mb-4">
+                            <label for="candidateFile" class="form-label">
+                                <i class="fas fa-file-pdf"></i>
+                                Upload Your CV
+                            </label>
+                            <div class="file-upload-wrapper" id="fileUploadWrapper">
+                                <input class="form-control" type="file" id="candidateFile" name="candidateFile" accept="application/pdf" required>
+                                <label for="candidateFile" class="file-upload-label">
+                                    <div class="file-upload-icon">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                    </div>
+                                    <div class="fw-semibold mb-2">Click to upload or drag and drop</div>
+                                    <div class="text-muted small">PDF files only (Max 10MB)</div>
+                                </label>
+                            </div>
+                            <div class="file-name-display" id="fileNameDisplay">
+                                <i class="fas fa-file-pdf"></i>
+                                <span id="fileName"></span>
+                            </div>
+                            <div class="invalid-feedback">Please select a PDF file.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="jobDescription" class="form-label">
+                                <i class="fas fa-briefcase"></i>
+                                Job Description
+                            </label>
+                            <textarea class="form-control" id="jobDescription" name="jobDescription" rows="10" placeholder="Paste the complete job description here including requirements, responsibilities, and qualifications..." required></textarea>
+                            <div class="invalid-feedback">Please paste the job description.</div>
+                        </div>
+
+                        <div class="info-note mb-4">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Analysis typically takes 30-60 seconds. Your data is processed securely and not stored.</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button id="submitBtn" class="btn btn-generate" type="submit">
+                                <i class="fas fa-magic me-2"></i>
+                                Generate Score
+                            </button>
+                        </div>
+                    </form>
+
+                    <div th:if="${score != null}" class="score-section">
+                        <div class="d-flex align-items-center gap-4 mb-4 flex-wrap">
+                            <div class="score-circle" th:text="${score}">85</div>
+                            <div class="score-info">
+                                <div class="score-label">Your Match Score</div>
+                                <div class="score-title">
+                                    <span class="badge badge-match" th:classappend="${matchClass}" th:text="${matchLabel}">EXCELLENT MATCH</span>
+                                </div>
+                                <div class="text-muted d-flex align-items-center gap-2 mt-2">
+                                    <i class="fas fa-file-alt"></i>
+                                    <span th:text="${cvName}">john_doe_cv.pdf</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="explanation-box">
+                            <h2>
+                                <i class="fas fa-lightbulb"></i>
+                                Detailed Analysis
+                            </h2>
+                            <p class="explanation" th:text="${explanation}">Your skills match the job requirements in areas A, B, and C...</p>
+                        </div>
+
+                        <div class="score-legend">
+                            <div class="fw-semibold mb-3 text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Score Interpretation Guide
+                            </div>
+                            <ul>
+                                <li><strong>90-100:</strong> Excellent match - You're an ideal candidate</li>
+                                <li><strong>70-89:</strong> Good match - Strong alignment with requirements</li>
+                                <li><strong>50-69:</strong> Partial match - Some gaps to address</li>
+                                <li><strong>Below 50:</strong> Weak match - Consider skill development</li>
+                            </ul>
+                        </div>
+
+                        <div class="mt-4">
+                            <a class="btn btn-reset" th:href="@{/}">
+                                <i class="fas fa-redo me-2"></i>
+                                Analyze Another Position
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="footer-text">
+                <i class="fas fa-code me-2"></i>
+                Created by Chikere Ezeh (Beta)
+            </p>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay d-none" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="loading-content">
+        <div class="spinner-custom"></div>
+        <h3>Analyzing Your Match</h3>
+        <p>This may take up to a minute. Please don't close the page.</p>
+    </div>
+</div>
+
+<script>
+    (() => {
+        'use strict';
+        const form = document.getElementById('scoreForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const overlay = document.getElementById('loadingOverlay');
+        const fileInput = document.getElementById('candidateFile');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const fileName = document.getElementById('fileName');
+        const fileUploadWrapper = document.getElementById('fileUploadWrapper');
+
+        // File upload handling
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    fileName.textContent = this.files[0].name;
+                    fileNameDisplay.classList.add('show');
+                    fileUploadWrapper.style.borderColor = '#667eea';
+                    fileUploadWrapper.style.background = '#f0f4ff';
+                } else {
+                    fileNameDisplay.classList.remove('show');
+                    fileUploadWrapper.style.borderColor = '#cbd5e0';
+                    fileUploadWrapper.style.background = '#f7fafc';
+                }
+            });
+        }
+
+        // Form submission handling
+        if (form) {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    form.classList.add('was-validated');
+                    return;
+                }
+
+                // Valid submission: show overlay
+                overlay.classList.remove('d-none');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+                }
+                form.classList.add('was-validated');
+            }, false);
+        }
+    })();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>
