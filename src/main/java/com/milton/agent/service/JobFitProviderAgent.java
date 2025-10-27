@@ -14,6 +14,7 @@ import com.milton.agent.models.JobRequirements;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.util.Assert;
 
 @Slf4j
@@ -22,6 +23,7 @@ import org.springframework.util.Assert;
         version = "1.0.0",
         beanName = "jobFitProviderAgent")
 @RequiredArgsConstructor
+@Profile("prod")
 public class JobFitProviderAgent {
 
     private final PromptLoader promptLoader;
@@ -29,35 +31,44 @@ public class JobFitProviderAgent {
     @Action
     public CvSkills extractSkillsFromCv(JobFitRequest request, OperationContext context) {
         log.info("Extracting key skills from CV" );
+
+        String skillsExtractorPrompt = promptLoader.loadPrompt("skills-extractor.txt");;
         CvSkills cvSkills = context.ai()
                 .withLlm(LlmOptions
                         .withModel(OpenAiModels.GPT_41_NANO)
-                        .withTemperature(0.0)
+                        .withTemperature(0.2)
+                        .withTopP(0.90)
+                        .withFrequencyPenalty(0.0)
+                        .withPresencePenalty(0.0)
+                        .withMaxTokens(3000)
                 )
-                .createObjectIfPossible("""
-                                Extract a list of key skills from this CV text: %s.
-                                Create a CvSkills object with the list.
-                                """.formatted(request.CvText()),
+                .createObject(skillsExtractorPrompt.formatted(request.CvText()),
                         CvSkills.class);
         Assert.notNull(cvSkills, "CV skills cannot be null");
+        log.info("Skills extracted: {}", cvSkills);
         return cvSkills;
     }
     @Action
     public JobRequirements extractJobRequirements(JobFitRequest request, OperationContext context) {
         log.info("Extracting a list of key requirements from job description");
+
+        String jobDescriptionPrompt = promptLoader.loadPrompt("job-description-extractor.txt");;
         JobRequirements requirements = context.ai()
                 .withLlm(LlmOptions
                         .withModel(OpenAiModels.GPT_41_NANO)
-                        .withTemperature(0.0)
+                        .withTemperature(0.2)
+                        .withTopP(0.90)
+                        .withFrequencyPenalty(0.0)
+                        .withPresencePenalty(0.0)
+                        .withMaxTokens(3000)
                 )
-                .createObjectIfPossible(
-                        """
-                        Extract a list of key requirements from this job description: %s.
-                        Create a JobRequirements object with the list.
-                        """.formatted(request.JobDescription()),
+                .createObject(
+                        jobDescriptionPrompt.formatted(request.JobDescription()),
                         JobRequirements.class
                 );
+
         Assert.notNull(requirements, "Job requirements cannot be null");
+        log.info("Job requirements extracted: {}", requirements);
         return requirements;
     }
 
@@ -71,10 +82,13 @@ public class JobFitProviderAgent {
 
         FitScore fitScore = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5)
-                        .withTemperature(0.0)
+                        .withModel(OpenAiModels.GPT_41_MINI)
+                        .withTemperature(0.2)
+                        .withTopP(0.95)
+                        .withFrequencyPenalty(0.0)
+                        .withPresencePenalty(0.0)
                 )
-                .createObjectIfPossible(finalPrompt, FitScore.class);
+                .createObject(finalPrompt, FitScore.class);
 
         Assert.notNull(fitScore, "Fit score cannot be null");
         return fitScore;

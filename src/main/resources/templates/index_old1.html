@@ -243,34 +243,8 @@
 
         .explanation {
             color: #4a5568;
-            line-height: 1.9;
-            white-space: pre-wrap;
-            font-size: 1rem;
-        }
-
-        .explanation p {
-            margin-bottom: 1rem;
-        }
-
-        .explanation strong {
-            color: #2d3748;
-            font-weight: 600;
-        }
-
-        .explanation-formatted {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .explanation-paragraph {
-            padding-left: 1rem;
-            border-left: 3px solid #e2e8f0;
-            transition: border-color 0.2s ease;
-        }
-
-        .explanation-paragraph:hover {
-            border-left-color: #667eea;
+            line-height: 1.8;
+            white-space: pre-line;
         }
 
         .score-legend {
@@ -512,7 +486,7 @@
                                 <i class="fas fa-lightbulb"></i>
                                 Detailed Analysis
                             </h2>
-                            <div class="explanation" id="explanationText" th:text="${explanation}">Your skills match the job requirements in areas A, B, and C...</div>
+                            <p class="explanation" th:text="${explanation}">Your skills match the job requirements in areas A, B, and C...</p>
                         </div>
 
                         <div class="score-legend">
@@ -579,37 +553,6 @@
                     fileUploadWrapper.style.background = '#f7fafc';
                 }
             });
-        }
-
-        // Format explanation text for better readability
-        const explanationText = document.getElementById('explanationText');
-        if (explanationText && explanationText.textContent.trim()) {
-            const text = explanationText.textContent.trim();
-
-            // Split by sentence-ending punctuation followed by space and capital letter
-            // or by double line breaks
-            let paragraphs = text.split(/\.(?=\s+[A-Z])|(?:\r?\n){2,}/);
-
-            // Clean up and group sentences into paragraphs
-            paragraphs = paragraphs.filter(p => p.trim().length > 0)
-                .map(p => p.trim())
-                .map(p => p.endsWith('.') ? p : p + '.');
-
-            // If we have multiple sentences, format them nicely
-            if (paragraphs.length > 1) {
-                const formattedDiv = document.createElement('div');
-                formattedDiv.className = 'explanation-formatted';
-
-                paragraphs.forEach(para => {
-                    const paraDiv = document.createElement('div');
-                    paraDiv.className = 'explanation-paragraph';
-                    paraDiv.textContent = para;
-                    formattedDiv.appendChild(paraDiv);
-                });
-
-                explanationText.innerHTML = '';
-                explanationText.appendChild(formattedDiv);
-            }
         }
 
         // Form submission handling
