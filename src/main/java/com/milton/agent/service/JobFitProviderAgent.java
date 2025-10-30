@@ -6,6 +6,7 @@ import com.embabel.agent.api.annotation.Agent;
 import com.embabel.agent.api.common.OperationContext;
 import com.embabel.agent.config.models.OpenAiModels;
 import com.embabel.common.ai.model.LlmOptions;
+import com.embabel.common.ai.model.Thinking;
 import com.milton.agent.config.PromptLoader;
 import com.milton.agent.models.CvSkills;
 import com.milton.agent.models.FitScore;
@@ -19,7 +20,7 @@ import org.springframework.util.Assert;
 
 @Slf4j
 @Agent(name = "job-fit-provider",
-        description = "Assesses how well a CV matches a job description and provides a fit score",
+        description = "Assesses how well a CV matches a job description and provides a fit score with an explanation",
         version = "1.0.0",
         beanName = "jobFitProviderAgent")
 @RequiredArgsConstructor
@@ -32,7 +33,8 @@ public class JobFitProviderAgent {
     public CvSkills extractSkillsFromCv(JobFitRequest request, OperationContext context) {
         log.info("Extracting key skills from CV" );
 
-        String skillsExtractorPrompt = promptLoader.loadPrompt("skills-extractor.txt");;
+        String skillsExtractorPrompt = promptLoader.loadPrompt("skills-extractor.txt");
+
         CvSkills cvSkills = context.ai()
                 .withLlm(LlmOptions
                         .withModel(OpenAiModels.GPT_41_NANO)
@@ -44,6 +46,7 @@ public class JobFitProviderAgent {
                 )
                 .createObject(skillsExtractorPrompt.formatted(request.CvText()),
                         CvSkills.class);
+
         Assert.notNull(cvSkills, "CV skills cannot be null");
         log.info("Skills extracted: {}", cvSkills);
         return cvSkills;
@@ -52,7 +55,8 @@ public class JobFitProviderAgent {
     public JobRequirements extractJobRequirements(JobFitRequest request, OperationContext context) {
         log.info("Extracting a list of key requirements from job description");
 
-        String jobDescriptionPrompt = promptLoader.loadPrompt("job-description-extractor.txt");;
+        String jobDescriptionPrompt = promptLoader.loadPrompt("job-description-extractor.txt");
+
         JobRequirements requirements = context.ai()
                 .withLlm(LlmOptions
                         .withModel(OpenAiModels.GPT_41_NANO)
@@ -79,6 +83,7 @@ public class JobFitProviderAgent {
 
         String promptTemplate = promptLoader.loadPrompt("jobfit-fit-score.txt");
         String finalPrompt = promptTemplate.formatted(cvSkills.skills(), jobRequirements.requirements());
+        log.info("Final Prompt: {}", finalPrompt);
 
         FitScore fitScore = context.ai()
                 .withLlm(LlmOptions
@@ -87,6 +92,7 @@ public class JobFitProviderAgent {
                         .withTopP(0.95)
                         .withFrequencyPenalty(0.0)
                         .withPresencePenalty(0.0)
+                        .withThinking(Thinking.withTokenBudget(10))
                 )
                 .createObject(finalPrompt, FitScore.class);
 

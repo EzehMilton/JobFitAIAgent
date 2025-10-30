@@ -25,7 +25,7 @@ public class UiController {
     private final AgentPlatform agentPlatform;
     private final TextExtractor textExtractor;
 
-    @GetMapping({"/", "/index"})
+    @GetMapping({"/"})
     public String index() {
         return "index";
     }
@@ -34,7 +34,7 @@ public class UiController {
     public String generateScore(@RequestParam("candidateFile") MultipartFile cv,
                                 @RequestParam("jobDescription") String jobDescription,
                                 Model model) throws IOException {
-        // Basic validations
+
         if (cv == null || cv.isEmpty()) {
             model.addAttribute("error", "Please upload a CV PDF file.");
             return "index";

@@ -144,12 +144,82 @@
             transform: none;
         }
 
+        /* Results Overlay */
+        .results-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1060;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .results-container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s ease-out;
+            margin: 2rem auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .results-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem;
+            border-radius: 24px 24px 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .results-header h2 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .results-body {
+            padding: 2rem;
+        }
+
         .score-section {
             background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
             border-radius: 20px;
             padding: 2.5rem;
-            margin-top: 2rem;
             border: 1px solid #e2e8f0;
+            margin-bottom: 2rem;
         }
 
         .score-circle {
@@ -165,7 +235,7 @@
             background: var(--primary-gradient);
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
             position: relative;
-            animation: scoreAppear 0.6s ease-out;
+            animation: scoreAppear 0.6s ease-out 0.3s both;
         }
 
         @keyframes scoreAppear {
@@ -231,7 +301,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
 
-        .explanation-box h2 {
+        .explanation-box h3 {
             color: #2d3748;
             font-size: 1.25rem;
             font-weight: 700;
@@ -290,16 +360,42 @@
             color: #4a5568;
         }
 
+        .results-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e2e8f0;
+        }
+
         .btn-reset {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .btn-close-results {
             border: 2px solid #e2e8f0;
             color: #4a5568;
-            padding: 0.75rem 1.5rem;
+            background: white;
+            padding: 0.875rem 2rem;
             border-radius: 12px;
             font-weight: 600;
             transition: all 0.3s ease;
         }
 
-        .btn-reset:hover {
+        .btn-close-results:hover {
             background: #f7fafc;
             border-color: #cbd5e0;
             color: #2d3748;
@@ -411,6 +507,14 @@
                 padding: 2rem 1.5rem;
             }
 
+            .results-header {
+                padding: 1.5rem;
+            }
+
+            .results-body {
+                padding: 1.5rem;
+            }
+
             .score-circle {
                 width: 100px;
                 height: 100px;
@@ -424,6 +528,10 @@
             .loading-content {
                 padding: 2rem;
                 margin: 1rem;
+            }
+
+            .results-container {
+                margin: 1rem auto;
             }
         }
     </style>
@@ -491,50 +599,6 @@
                             </button>
                         </div>
                     </form>
-
-                    <div th:if="${score != null}" class="score-section">
-                        <div class="d-flex align-items-center gap-4 mb-4 flex-wrap">
-                            <div class="score-circle" th:text="${score}">85</div>
-                            <div class="score-info">
-                                <div class="score-label">Your Match Score</div>
-                                <div class="score-title">
-                                    <span class="badge badge-match" th:classappend="${matchClass}" th:text="${matchLabel}">EXCELLENT MATCH</span>
-                                </div>
-                                <div class="text-muted d-flex align-items-center gap-2 mt-2">
-                                    <i class="fas fa-file-alt"></i>
-                                    <span th:text="${cvName}">john_doe_cv.pdf</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="explanation-box">
-                            <h2>
-                                <i class="fas fa-lightbulb"></i>
-                                Detailed Analysis
-                            </h2>
-                            <div class="explanation" id="explanationText" th:text="${explanation}">Your skills match the job requirements in areas A, B, and C...</div>
-                        </div>
-
-                        <div class="score-legend">
-                            <div class="fw-semibold mb-3 text-muted">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Score Interpretation Guide
-                            </div>
-                            <ul>
-                                <li><strong>90-100:</strong> Excellent match - You're an ideal candidate</li>
-                                <li><strong>70-89:</strong> Good match - Strong alignment with requirements</li>
-                                <li><strong>50-69:</strong> Partial match - Some gaps to address</li>
-                                <li><strong>Below 50:</strong> Weak match - Consider skill development</li>
-                            </ul>
-                        </div>
-
-                        <div class="mt-4">
-                            <a class="btn btn-reset" th:href="@{/}">
-                                <i class="fas fa-redo me-2"></i>
-                                Analyze Another Position
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -546,6 +610,69 @@
     </div>
 </div>
 
+<!-- Results Overlay -->
+<div th:if="${score != null}" class="results-overlay" id="resultsOverlay">
+    <div class="results-container">
+        <div class="results-header">
+            <h2>
+                <i class="fas fa-trophy"></i>
+                Analysis Complete
+            </h2>
+        </div>
+
+        <div class="results-body">
+            <div class="score-section">
+                <div class="d-flex align-items-center gap-4 mb-4 flex-wrap">
+                    <div class="score-circle" th:text="${score}">85</div>
+                    <div class="score-info">
+                        <div class="score-label">Your Match Score</div>
+                        <div class="score-title">
+                            <span class="badge badge-match" th:classappend="${matchClass}" th:text="${matchLabel}">EXCELLENT MATCH</span>
+                        </div>
+                        <div class="text-muted d-flex align-items-center gap-2 mt-2">
+                            <i class="fas fa-file-alt"></i>
+                            <span th:text="${cvName}">john_doe_cv.pdf</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="explanation-box">
+                <h3>
+                    <i class="fas fa-lightbulb"></i>
+                    Detailed Analysis
+                </h3>
+                <div class="explanation" id="explanationText" th:text="${explanation}">Your skills match the job requirements in areas A, B, and C...</div>
+            </div>
+
+            <div class="score-legend">
+                <div class="fw-semibold mb-3 text-muted">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Score Interpretation Guide
+                </div>
+                <ul>
+                    <li><strong>90-100:</strong> Excellent match - You're an ideal candidate</li>
+                    <li><strong>70-89:</strong> Good match - Strong alignment with requirements</li>
+                    <li><strong>50-69:</strong> Partial match - Some gaps to address</li>
+                    <li><strong>Below 50:</strong> Weak match - Consider skill development</li>
+                </ul>
+            </div>
+
+            <div class="results-actions">
+                <a class="btn btn-reset" th:href="@{/}">
+                    <i class="fas fa-redo me-2"></i>
+                    Analyze Another Position
+                </a>
+                <button class="btn btn-close-results" onclick="document.getElementById('resultsOverlay').style.display='none'">
+                    <i class="fas fa-times me-2"></i>
+                    Close Results
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
 <div id="loadingOverlay" class="loading-overlay d-none" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="loading-content">
         <div class="spinner-custom"></div>
@@ -586,16 +713,12 @@
         if (explanationText && explanationText.textContent.trim()) {
             const text = explanationText.textContent.trim();
 
-            // Split by sentence-ending punctuation followed by space and capital letter
-            // or by double line breaks
             let paragraphs = text.split(/\.(?=\s+[A-Z])|(?:\r?\n){2,}/);
 
-            // Clean up and group sentences into paragraphs
             paragraphs = paragraphs.filter(p => p.trim().length > 0)
                 .map(p => p.trim())
                 .map(p => p.endsWith('.') ? p : p + '.');
 
-            // If we have multiple sentences, format them nicely
             if (paragraphs.length > 1) {
                 const formattedDiv = document.createElement('div');
                 formattedDiv.className = 'explanation-formatted';
@@ -622,7 +745,6 @@
                     return;
                 }
 
-                // Valid submission: show overlay
                 overlay.classList.remove('d-none');
                 if (submitBtn) {
                     submitBtn.disabled = true;
@@ -631,6 +753,16 @@
                 form.classList.add('was-validated');
             }, false);
         }
+
+        // Close overlay on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const resultsOverlay = document.getElementById('resultsOverlay');
+                if (resultsOverlay) {
+                    resultsOverlay.style.display = 'none';
+                }
+            }
+        });
     })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
