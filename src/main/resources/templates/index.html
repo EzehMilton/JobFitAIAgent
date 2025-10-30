@@ -502,6 +502,61 @@
             color: #667eea;
         }
 
+        .stored-cv-banner {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 2px solid #4caf50;
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .stored-cv-banner .form-check {
+            margin-bottom: 0;
+        }
+
+        .stored-cv-banner .form-check-input {
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+            border: 2px solid #4caf50;
+        }
+
+        .stored-cv-banner .form-check-input:checked {
+            background-color: #4caf50;
+            border-color: #4caf50;
+        }
+
+        .stored-cv-banner .form-check-label {
+            cursor: pointer;
+            font-size: 1rem;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            margin-left: 0.5rem;
+        }
+
+        .stored-cv-name {
+            color: #4caf50;
+            font-weight: 700;
+            margin-left: 0.25rem;
+        }
+
+        .stored-cv-info {
+            color: #2e7d32;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .cv-upload-section-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
         @media (max-width: 768px) {
             .card-header-custom {
                 padding: 2rem 1.5rem;
@@ -555,14 +610,40 @@
                         <span th:text="${error}"></span>
                     </div>
 
-                    <form id="scoreForm" th:action="@{/generate}" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
-                        <div class="mb-4">
+                    <form id="scoreForm" enctype="multipart/form-data">
+
+                        <!-- Reuse CV Section (shown only if CV exists in session) -->
+                        <div th:if="${storedCvName}" class="mb-4">
+                            <div class="stored-cv-banner">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="reuseCv" name="reuseCv" value="true" checked>
+                                    <label class="form-check-label" for="reuseCv">
+                                        <i class="fas fa-sync-alt me-2"></i>
+                                        <strong>Reuse previous CV:</strong>
+                                        <span class="stored-cv-name" th:text="${storedCvName}">resume.pdf</span>
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="stored-cv-info">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <small>Uncheck to upload a different CV</small>
+                                    </div>
+                                    <form th:action="@{/clear-cv}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove stored CV">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4" id="cvUploadSection">
                             <label for="candidateFile" class="form-label">
                                 <i class="fas fa-file-pdf"></i>
-                                Upload Your CV
+                                <span id="uploadLabel">Upload Your CV</span>
                             </label>
                             <div class="file-upload-wrapper" id="fileUploadWrapper">
-                                <input class="form-control" type="file" id="candidateFile" name="candidateFile" accept="application/pdf" required>
+                                <input class="form-control" type="file" id="candidateFile" name="candidateFile" accept="application/pdf">
                                 <label for="candidateFile" class="file-upload-label">
                                     <div class="file-upload-icon">
                                         <i class="fas fa-cloud-upload-alt"></i>
@@ -575,7 +656,7 @@
                                 <i class="fas fa-file-pdf"></i>
                                 <span id="fileName"></span>
                             </div>
-                            <div class="invalid-feedback">Please select a PDF file.</div>
+                            <div class="invalid-feedback">Please select a PDF file or check "Reuse previous CV".</div>
                         </div>
 
                         <div class="mb-4">
@@ -593,7 +674,7 @@
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center">
-                            <button id="submitBtn" class="btn btn-generate" type="submit">
+                            <button id="submitBtn" class="btn btn-generate" type="button">
                                 <i class="fas fa-magic me-2"></i>
                                 Generate Score
                             </button>
@@ -682,88 +763,120 @@
 </div>
 
 <script>
-    (() => {
-        'use strict';
-        const form = document.getElementById('scoreForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const overlay = document.getElementById('loadingOverlay');
-        const fileInput = document.getElementById('candidateFile');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const fileName = document.getElementById('fileName');
-        const fileUploadWrapper = document.getElementById('fileUploadWrapper');
+    // AJAX-BASED FORM SUBMISSION - BYPASSES HTML5 VALIDATION
+    window.addEventListener('DOMContentLoaded', function() {
+        console.log('=== Page loaded - AJAX mode ===');
 
-        // File upload handling
+        var form = document.getElementById('scoreForm');
+        var submitBtn = document.getElementById('submitBtn');
+        var fileInput = document.getElementById('candidateFile');
+        var jobDescTextarea = document.getElementById('jobDescription');
+        var reuseCvCheckbox = document.getElementById('reuseCv');
+        var overlay = document.getElementById('loadingOverlay');
+
+        // Handle CV reuse checkbox
+        if (reuseCvCheckbox) {
+            var cvUploadSection = document.getElementById('cvUploadSection');
+            var uploadLabel = document.getElementById('uploadLabel');
+
+            function toggleUpload() {
+                if (reuseCvCheckbox.checked) {
+                    cvUploadSection.classList.add('cv-upload-section-disabled');
+                    uploadLabel.innerHTML = '<i class="fas fa-file-pdf"></i> Upload Different CV (Optional)';
+                } else {
+                    cvUploadSection.classList.remove('cv-upload-section-disabled');
+                    uploadLabel.innerHTML = '<i class="fas fa-file-pdf"></i> Upload Your CV';
+                }
+            }
+
+            toggleUpload();
+            reuseCvCheckbox.addEventListener('change', toggleUpload);
+        }
+
+        // File upload display
         if (fileInput) {
-            fileInput.addEventListener('change', function(e) {
+            fileInput.addEventListener('change', function() {
+                var fileNameDisplay = document.getElementById('fileNameDisplay');
+                var fileName = document.getElementById('fileName');
                 if (this.files && this.files[0]) {
                     fileName.textContent = this.files[0].name;
                     fileNameDisplay.classList.add('show');
-                    fileUploadWrapper.style.borderColor = '#667eea';
-                    fileUploadWrapper.style.background = '#f0f4ff';
-                } else {
-                    fileNameDisplay.classList.remove('show');
-                    fileUploadWrapper.style.borderColor = '#cbd5e0';
-                    fileUploadWrapper.style.background = '#f7fafc';
                 }
             });
         }
 
-        // Format explanation text for better readability
-        const explanationText = document.getElementById('explanationText');
-        if (explanationText && explanationText.textContent.trim()) {
-            const text = explanationText.textContent.trim();
+        // AJAX FORM SUBMISSION
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('=== Submit button clicked (AJAX) ===');
 
-            let paragraphs = text.split(/\.(?=\s+[A-Z])|(?:\r?\n){2,}/);
+            var isReusing = reuseCvCheckbox && reuseCvCheckbox.checked;
+            var hasFile = fileInput.files && fileInput.files.length > 0;
+            var jobDesc = jobDescTextarea.value.trim();
 
-            paragraphs = paragraphs.filter(p => p.trim().length > 0)
-                .map(p => p.trim())
-                .map(p => p.endsWith('.') ? p : p + '.');
+            console.log('Reusing CV:', isReusing);
+            console.log('Has file:', hasFile);
+            console.log('Job description length:', jobDesc.length);
 
-            if (paragraphs.length > 1) {
-                const formattedDiv = document.createElement('div');
-                formattedDiv.className = 'explanation-formatted';
+            // Validation
+            if (!isReusing && !hasFile) {
+                alert('Please upload a CV or check "Reuse previous CV"');
+                return;
+            }
 
-                paragraphs.forEach(para => {
-                    const paraDiv = document.createElement('div');
-                    paraDiv.className = 'explanation-paragraph';
-                    paraDiv.textContent = para;
-                    formattedDiv.appendChild(paraDiv);
+            if (!jobDesc) {
+                alert('Please enter a job description');
+                jobDescTextarea.focus();
+                return;
+            }
+
+            // Show loading
+            overlay.classList.remove('d-none');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+
+            // Build form data
+            var formData = new FormData();
+
+            if (isReusing) {
+                formData.append('reuseCv', 'true');
+                console.log('Submitting with reuseCv=true');
+            } else if (hasFile) {
+                formData.append('candidateFile', fileInput.files[0]);
+                console.log('Submitting with file:', fileInput.files[0].name);
+            }
+
+            formData.append('jobDescription', jobDesc);
+
+            // Submit via AJAX
+            console.log('Sending AJAX request to /generate');
+            fetch('/generate', {
+                method: 'POST',
+                body: formData
+            })
+                .then(function(response) {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error('Server error: ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(function(html) {
+                    console.log('Success! Replacing page content');
+                    // Replace entire page with response
+                    document.open();
+                    document.write(html);
+                    document.close();
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                    alert('An error occurred: ' + error.message);
+                    overlay.classList.add('d-none');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-magic me-2"></i>Generate Score';
                 });
-
-                explanationText.innerHTML = '';
-                explanationText.appendChild(formattedDiv);
-            }
-        }
-
-        // Form submission handling
-        if (form) {
-            form.addEventListener('submit', event => {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    form.classList.add('was-validated');
-                    return;
-                }
-
-                overlay.classList.remove('d-none');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
-                }
-                form.classList.add('was-validated');
-            }, false);
-        }
-
-        // Close overlay on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const resultsOverlay = document.getElementById('resultsOverlay');
-                if (resultsOverlay) {
-                    resultsOverlay.style.display = 'none';
-                }
-            }
         });
-    })();
+    });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>

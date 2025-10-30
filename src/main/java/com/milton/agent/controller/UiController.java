@@ -6,6 +6,7 @@ import com.milton.agent.models.FitScore;
 import com.milton.agent.models.JobFitRequest;
 import com.milton.agent.service.TextExtractor;
 import com.milton.agent.util.FileValidationUtil;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -25,32 +26,69 @@ public class UiController {
     private final AgentPlatform agentPlatform;
     private final TextExtractor textExtractor;
 
+    private static final String SESSION_CV_TEXT = "storedCvText";
+    private static final String SESSION_CV_NAME = "storedCvName";
+
     @GetMapping({"/"})
-    public String index() {
+    public String index(HttpSession session, Model model) {
+        // Check if there's a CV in session and add it to model
+        String storedCvName = (String) session.getAttribute(SESSION_CV_NAME);
+        if (storedCvName != null) {
+            model.addAttribute("storedCvName", storedCvName);
+        }
         return "index";
     }
 
     @PostMapping("/generate")
-    public String generateScore(@RequestParam("candidateFile") MultipartFile cv,
+    public String generateScore(@RequestParam(value = "candidateFile", required = false) MultipartFile cv,
+                                @RequestParam(value = "reuseCv", required = false) Boolean reuseCv,
                                 @RequestParam("jobDescription") String jobDescription,
+                                HttpSession session,
                                 Model model) throws IOException {
 
-        if (cv == null || cv.isEmpty()) {
-            model.addAttribute("error", "Please upload a CV PDF file.");
-            return "index";
+        String candidateCvText;
+        String cvFileName;
+
+        // Determine whether to use new CV or reuse from session
+        if (Boolean.TRUE.equals(reuseCv)) {
+            // Reuse CV from session
+            candidateCvText = (String) session.getAttribute(SESSION_CV_TEXT);
+            cvFileName = (String) session.getAttribute(SESSION_CV_NAME);
+
+            if (candidateCvText == null || cvFileName == null) {
+                model.addAttribute("error", "No CV found in session. Please upload a new CV.");
+                return "index";
+            }
+
+            log.info("Reusing CV from session: {}", cvFileName);
+        } else {
+            // Validate and process new CV upload
+            if (cv == null || cv.isEmpty()) {
+                model.addAttribute("error", "Please upload a CV PDF file.");
+                return "index";
+            }
+            if (!FileValidationUtil.isPdfFile(cv)) {
+                model.addAttribute("error", "Candidate CV must be a PDF file.");
+                return "index";
+            }
+
+            log.info("UI request received. New CV uploaded: {}", cv.getOriginalFilename());
+
+            candidateCvText = textExtractor.extractText(cv);
+            cvFileName = cv.getOriginalFilename();
+
+            // Store in session for future reuse
+            session.setAttribute(SESSION_CV_TEXT, candidateCvText);
+            session.setAttribute(SESSION_CV_NAME, cvFileName);
         }
-        if (!FileValidationUtil.isPdfFile(cv)) {
-            model.addAttribute("error", "Candidate CV must be a PDF file.");
-            return "index";
-        }
+
+        // Validate job description
         if (jobDescription == null || jobDescription.trim().isEmpty()) {
             model.addAttribute("error", "Please paste the job description.");
+            model.addAttribute("storedCvName", cvFileName); // Preserve CV info in case of error
             return "index";
         }
 
-        log.info("UI request received. CV: {}", cv.getOriginalFilename());
-
-        var candidateCvText = textExtractor.extractText(cv);
         var jobDescriptionText = jobDescription.trim();
 
         JobFitRequest request = new JobFitRequest(candidateCvText, jobDescriptionText);
@@ -60,9 +98,10 @@ public class UiController {
         int score = fitScore.score();
         model.addAttribute("score", score);
         model.addAttribute("explanation", fitScore.explanation());
-        model.addAttribute("cvName", cv.getOriginalFilename());
+        model.addAttribute("cvName", cvFileName);
         model.addAttribute("matchLabel", toMatchLabel(score));
         model.addAttribute("matchClass", toMatchClass(score));
+        model.addAttribute("storedCvName", cvFileName); // Keep showing stored CV option
 
         return "index";
     }
@@ -79,5 +118,13 @@ public class UiController {
         if (score >= 70) return "bg-primary";
         if (score >= 50) return "bg-warning text-dark";
         return "bg-danger";
+    }
+
+    @PostMapping("/clear-cv")
+    public String clearStoredCv(HttpSession session) {
+        session.removeAttribute(SESSION_CV_TEXT);
+        session.removeAttribute(SESSION_CV_NAME);
+        log.info("Cleared stored CV from session");
+        return "redirect:/";
     }
 }
