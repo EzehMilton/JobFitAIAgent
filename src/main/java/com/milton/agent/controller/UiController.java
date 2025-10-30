@@ -4,8 +4,11 @@ import com.embabel.agent.api.common.autonomy.AgentInvocation;
 import com.embabel.agent.core.AgentPlatform;
 import com.milton.agent.models.FitScore;
 import com.milton.agent.models.JobFitRequest;
+import com.milton.agent.service.RateLimitService;
 import com.milton.agent.service.TextExtractor;
 import com.milton.agent.util.FileValidationUtil;
+import com.milton.agent.util.IpAddressUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,17 +28,29 @@ public class UiController {
 
     private final AgentPlatform agentPlatform;
     private final TextExtractor textExtractor;
+    private final RateLimitService rateLimitService;
 
     private static final String SESSION_CV_TEXT = "storedCvText";
     private static final String SESSION_CV_NAME = "storedCvName";
 
     @GetMapping({"/"})
-    public String index(HttpSession session, Model model) {
+    public String index(HttpSession session, HttpServletRequest request, Model model) {
         // Check if there's a CV in session and add it to model
         String storedCvName = (String) session.getAttribute(SESSION_CV_NAME);
         if (storedCvName != null) {
             model.addAttribute("storedCvName", storedCvName);
         }
+
+        // Add rate limit info to model
+        String ipAddress = IpAddressUtil.getClientIpAddress(request);
+        int remainingRequests = rateLimitService.getRemainingRequests(ipAddress);
+        int usedRequests = rateLimitService.getRequestCount(ipAddress);
+
+        model.addAttribute("remainingRequests", remainingRequests);
+        model.addAttribute("usedRequests", usedRequests);
+
+        log.debug("IP {} - Used: {}/3, Remaining: {}", ipAddress, usedRequests, remainingRequests);
+
         return "index";
     }
 
@@ -43,8 +58,31 @@ public class UiController {
     public String generateScore(@RequestParam(value = "candidateFile", required = false) MultipartFile cv,
                                 @RequestParam(value = "reuseCv", required = false) Boolean reuseCv,
                                 @RequestParam("jobDescription") String jobDescription,
+                                HttpServletRequest request,
                                 HttpSession session,
                                 Model model) throws IOException {
+
+        // Get client IP address
+        String ipAddress = IpAddressUtil.getClientIpAddress(request);
+        log.info("Request from IP: {}", ipAddress);
+
+        // Check rate limit
+        if (!rateLimitService.isAllowed(ipAddress)) {
+            int usedRequests = rateLimitService.getRequestCount(ipAddress);
+            model.addAttribute("error", "Rate limit exceeded. You have used all 3 free analyses. Please try again tomorrow.");
+            model.addAttribute("rateLimitExceeded", true);
+            model.addAttribute("usedRequests", usedRequests);
+            model.addAttribute("remainingRequests", 0);
+
+            // Preserve stored CV info if available
+            String storedCvName = (String) session.getAttribute(SESSION_CV_NAME);
+            if (storedCvName != null) {
+                model.addAttribute("storedCvName", storedCvName);
+            }
+
+            log.warn("Rate limit exceeded for IP: {}", ipAddress);
+            return "index";
+        }
 
         String candidateCvText;
         String cvFileName;
@@ -91,9 +129,9 @@ public class UiController {
 
         var jobDescriptionText = jobDescription.trim();
 
-        JobFitRequest request = new JobFitRequest(candidateCvText, jobDescriptionText);
+        JobFitRequest jobFitRequest = new JobFitRequest(candidateCvText, jobDescriptionText);
         var fitScoreAgentInvocation = AgentInvocation.create(agentPlatform, FitScore.class);
-        FitScore fitScore = fitScoreAgentInvocation.invoke(request);
+        FitScore fitScore = fitScoreAgentInvocation.invoke(jobFitRequest);
 
         int score = fitScore.score();
         model.addAttribute("score", score);
@@ -102,6 +140,14 @@ public class UiController {
         model.addAttribute("matchLabel", toMatchLabel(score));
         model.addAttribute("matchClass", toMatchClass(score));
         model.addAttribute("storedCvName", cvFileName); // Keep showing stored CV option
+
+        // Update rate limit info
+        int remainingRequests = rateLimitService.getRemainingRequests(ipAddress);
+        int usedRequests = rateLimitService.getRequestCount(ipAddress);
+        model.addAttribute("remainingRequests", remainingRequests);
+        model.addAttribute("usedRequests", usedRequests);
+
+        log.info("Analysis complete for IP: {}. Remaining requests: {}", ipAddress, remainingRequests);
 
         return "index";
     }
