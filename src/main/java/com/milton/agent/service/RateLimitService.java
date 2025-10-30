@@ -127,7 +127,7 @@ public class RateLimitService {
     }
 
     /**
-     * Inner class to store daily request information per IP.
+     * Inner class to store daily request information per IP
      */
     private static class DailyRequestInfo {
         int requestCount = 0;

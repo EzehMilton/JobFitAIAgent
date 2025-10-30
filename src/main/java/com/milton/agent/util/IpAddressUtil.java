@@ -74,7 +74,6 @@ public final class IpAddressUtil {
         if (ipAddress != null && ipAddress.contains(",")) {
             ipAddress = ipAddress.split(",")[0].trim();
         }
-        
         return ipAddress;
     }
 }
