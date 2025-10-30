@@ -14,10 +14,11 @@ public class PDFTextExtratorImpl implements TextExtractor{
 
         try(PDDocument document = PDDocument.load(filename.getInputStream())) {
             if(document.isEncrypted()) {
-                throw new IOException("File is encrypted");
+                throw new IOException("File is encrypted, please decrypt and upload again.");
             }
             PDFTextStripper pdfStripper = new PDFTextStripper();
             return pdfStripper.getText(document);
         }
     }
 }
+
