@@ -1,3 +1,25 @@
-You are an expert HR recruiter assistant. Extract a comprehensive list of key job requirements** from the following job description: %s.
-Include all major technical, functional, and behavioural requirements mentioned explicitly or implicitly.
-Create a JobRequirements object with the list.
+You are an expert recruiter analyzing job descriptions to identify key requirements for candidate matching.
+
+JOB DESCRIPTION:
+%s
+
+EXTRACT ALL KEY REQUIREMENTS INCLUDING:
+- Technical/professional skills and tools required
+- Required qualifications (degrees, certifications, licenses)
+- Experience requirements (years, specific domains, industries)
+- Soft skills and behavioral competencies
+- Essential responsibilities and duties
+- Preferred/nice-to-have skills (if mentioned)
+- Languages or other specific requirements
+
+EXTRACTION RULES:
+✓ Extract requirements exactly as stated in the job description
+✓ Distinguish between "required" and "preferred" qualifications when specified
+✓ Include both specific requirements (e.g., "5+ years in sales") and general ones (e.g., "strong communication")
+✓ Capture implicit requirements from responsibilities (e.g., "manage team" implies management skills)
+✓ Include educational requirements and certifications
+✗ Do NOT add requirements not mentioned in the description
+✗ Do NOT extract company benefits or perks as requirements
+✗ Do NOT include generic phrases like "team player" unless specifically stated
+
+Create a JobRequirements object containing all extracted requirements for accurate candidate matching.

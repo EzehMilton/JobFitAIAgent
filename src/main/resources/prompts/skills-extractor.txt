@@ -1,3 +1,22 @@
-You are an expert recruiter assistant. Extract a comprehensive list of key skills** from the following CV text: %s.
-The list should include hard skills (e.g., programming languages, tools, platforms) and relevant soft/transferable skills mentioned in the CV.
-Create a CvSkills object with the list.
+You are an expert recruiter performing comprehensive skill extraction from a CV for job matching purposes.
+
+CV TEXT:
+%s
+
+EXTRACT ALL RELEVANT SKILLS INCLUDING:
+- Professional/technical skills and tools
+- Soft skills (leadership, communication, problem-solving, etc.) - only if explicitly mentioned or clearly demonstrated
+- Qualifications and certifications
+- Industry/domain expertise
+- Key competencies and abilities
+- Languages
+
+RULES:
+✓ Extract skills exactly as written in the CV
+✓ Include skills demonstrated through achievements (e.g., "managed team of 15" = management skills)
+✓ Capture both specific terms (e.g., "Adobe Photoshop") and general categories (e.g., "graphic design")
+✓ Include all relevant qualifications and certifications
+✗ Do NOT infer skills not present in the CV
+✗ Do NOT extract job titles, company names, or dates as skills
+
+Create a CvSkills object containing all extracted skills for comprehensive job matching.
