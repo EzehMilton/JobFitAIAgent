@@ -1,25 +1,155 @@
-You are an expert recruiter analyzing job descriptions to identify key requirements for candidate matching.
+You are an expert recruiter analyzing job descriptions to extract and prioritize requirements for candidate matching.
 
 JOB DESCRIPTION:
 %s
 
-EXTRACT ALL KEY REQUIREMENTS INCLUDING:
-- Technical/professional skills and tools required
-- Required qualifications (degrees, certifications, licenses)
-- Experience requirements (years, specific domains, industries)
-- Soft skills and behavioral competencies
-- Essential responsibilities and duties
-- Preferred/nice-to-have skills (if mentioned)
-- Languages or other specific requirements
+YOUR TASK: Extract ALL requirements and categorize them by priority level based on how critical they are to role success.
 
+═══════════════════════════════════════════════════════════════════════
+PRIORITY LEVEL DEFINITIONS:
+═══════════════════════════════════════════════════════════════════════
+
+1. CRITICAL REQUIREMENTS (criticalRequirements)
+   Definition: Must-have skills fundamental to performing the role. Missing these = poor fit.
+
+   Include here:
+   ✓ Core technical skills explicitly required for the role
+   ✓ Mandatory years of experience (e.g., "5+ years in software development")
+   ✓ Required certifications, licenses, or educational qualifications
+   ✓ Essential hands-on expertise that cannot be quickly learned
+   ✓ Skills marked with: "must have", "required", "essential", "mandatory"
+
+   Default rules:
+   → For TECHNICAL roles: All technical skills are CRITICAL unless stated "nice to have"
+   → For NON-TECHNICAL roles: Domain expertise and experience are often CRITICAL
+
+2. IMPORTANT REQUIREMENTS (importantRequirements)
+   Definition: Strongly preferred skills that improve performance but aren't deal-breakers.
+
+   Include here:
+   ✓ Secondary technical skills or alternative tools
+   ✓ Preferred domain experience or industry knowledge
+   ✓ Important methodologies (e.g., "Agile experience")
+   ✓ Skills marked with: "strongly preferred", "should have", "ideally", "experience with"
+
+3. SUPPORTING REQUIREMENTS (supportingRequirements)
+   Definition: Nice-to-have skills that add value but candidates can succeed without.
+
+   Include here:
+   ✓ Bonus or additional skills
+   ✓ General soft skills (communication, teamwork, collaboration)
+   ✓ Adjacent experience or transferable knowledge
+   ✓ Skills marked with: "nice to have", "bonus", "plus", "beneficial"
+
+   Default rule:
+   → Most soft/interpersonal skills go here UNLESS explicitly stated as critical
+
+═══════════════════════════════════════════════════════════════════════
+CATEGORIZATION DECISION TREE:
+═══════════════════════════════════════════════════════════════════════
+
+For each requirement, ask:
+
+1. Is it explicitly marked "required", "must have", "essential"?
+   YES → CRITICAL
+   NO → Continue to Q2
+
+2. Is it a technical skill for a technical role (software engineering, data science, etc.)?
+   YES → CRITICAL (unless marked "nice to have")
+   NO → Continue to Q3
+
+3. Is it mentioned in >50% of the core responsibilities?
+   YES → CRITICAL or IMPORTANT (depending on specificity)
+   NO → Continue to Q4
+
+4. Could someone perform the job on day 1 without this skill?
+   NO → CRITICAL
+   WITH DIFFICULTY → IMPORTANT
+   YES, BUT LESS EFFECTIVELY → SUPPORTING
+
+5. Is it a general soft skill (communication, teamwork)?
+   YES → SUPPORTING (unless explicitly stated as essential)
+
+═══════════════════════════════════════════════════════════════════════
+WORKED EXAMPLES:
+═══════════════════════════════════════════════════════════════════════
+
+Example 1: Software Engineering Role
+JD: "We're seeking a Senior Engineer with 5+ years Python experience and strong knowledge
+of LLM systems. Must have experience deploying production APIs. TypeScript knowledge preferred.
+Strong communication skills and team collaboration required."
+
+CORRECT Categorization:
+{
+  "criticalRequirements": [
+    "5+ years Python development experience",
+    "Strong knowledge of LLM systems",
+    "Experience deploying production APIs"
+  ],
+  "importantRequirements": [
+    "TypeScript knowledge",
+    "Senior-level engineering experience"
+  ],
+  "supportingRequirements": [
+    "Strong communication skills",
+    "Team collaboration"
+  ]
+}
+
+Example 2: Customer Service Role
+JD: "Looking for a customer service representative with excellent communication skills.
+Must have 2+ years customer-facing experience. CRM software experience required.
+Bachelor's degree preferred. Problem-solving skills essential."
+
+CORRECT Categorization:
+{
+  "criticalRequirements": [
+    "2+ years customer-facing experience",
+    "CRM software experience",
+    "Excellent communication skills",
+    "Problem-solving skills"
+  ],
+  "importantRequirements": [
+    "Bachelor's degree"
+  ],
+  "supportingRequirements": []
+}
+
+Note: For customer service, communication IS critical (explicitly essential).
+
+═══════════════════════════════════════════════════════════════════════
 EXTRACTION RULES:
-✓ Extract requirements exactly as stated in the job description
-✓ Distinguish between "required" and "preferred" qualifications when specified
-✓ Include both specific requirements (e.g., "5+ years in sales") and general ones (e.g., "strong communication")
-✓ Capture implicit requirements from responsibilities (e.g., "manage team" implies management skills)
-✓ Include educational requirements and certifications
-✗ Do NOT add requirements not mentioned in the description
-✗ Do NOT extract company benefits or perks as requirements
-✗ Do NOT include generic phrases like "team player" unless specifically stated
+═══════════════════════════════════════════════════════════════════════
 
-Create a JobRequirements object containing all extracted requirements for accurate candidate matching.
+DO:
+✓ Extract requirements exactly as stated
+✓ Include experience levels when specified (e.g., "3+ years", "senior level")
+✓ Capture implicit requirements from responsibilities ("lead technical workshops" implies presentation skills AND technical expertise)
+✓ Distinguish between "required" and "preferred" explicitly
+✓ Be specific: "Python programming" not just "programming"
+
+DO NOT:
+✗ Add requirements not mentioned in the description
+✗ Extract company benefits, perks, salary, or work environment as requirements
+✗ Make everything critical - most JDs have 3-8 critical requirements max
+✗ Assume generic soft skills are critical unless explicitly stated
+✗ Include redundant or duplicate requirements
+
+═══════════════════════════════════════════════════════════════════════
+OUTPUT FORMAT:
+═══════════════════════════════════════════════════════════════════════
+
+Return a valid JobRequirements object:
+{
+  "criticalRequirements": ["req1", "req2", ...],
+  "importantRequirements": ["req1", "req2", ...],
+  "supportingRequirements": ["req1", "req2", ...]
+}
+
+VALIDATION:
+- criticalRequirements typically has 3-10 items (not 20+)
+- Each requirement should be specific and actionable
+- No duplicates across or within categories
+- Empty lists are acceptable if no requirements in that priority level
+
+Now extract and categorize requirements from the job description above.

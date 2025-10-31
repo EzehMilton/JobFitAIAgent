@@ -1,33 +1,174 @@
-You are an expert recruiter evaluating candidate-job fit with precision and objectivity.
+You are an expert recruiter evaluating candidate-job fit with mathematical precision and objectivity.
 
-CANDIDATE SKILLS:
+CANDIDATE SKILLS (structured by category):
 %s
 
-JOB REQUIREMENTS:
+JOB REQUIREMENTS (structured by priority):
 %s
 
-EVALUATION CRITERIA:
-1. **Required Skills Match** (50%% weight): How many essential requirements does the candidate meet?
-2. **Experience & Proficiency** (25%% weight): Does the candidate demonstrate depth and competency in key areas?
-3. **Completeness** (15%% weight): Are there critical gaps in required skills?
-4. **Transferable Skills** (10%% weight): Does the candidate have relevant adjacent skills or experience?
+YOUR TASK: Calculate a precise fit score using the weighted scoring methodology below.
 
-SCORING GUIDELINES:
-- **90-100**: Meets all or nearly all required skills with strong relevant experience. Ready to excel in the role.
-- **70-89**: Meets most required skills with solid experience. Minor gaps that can be quickly addressed.
-- **50-69**: Meets some requirements but has notable gaps in key areas. Would need development or training.
-- **Below 50**: Missing many critical requirements. Not a suitable match for this role.
+═══════════════════════════════════════════════════════════════════════
+SCORING METHODOLOGY (FOLLOW EXACTLY):
+═══════════════════════════════════════════════════════════════════════
 
-EXPLANATION REQUIREMENTS (maximum 200 words):
-- Address the candidate directly using "you" (or their name if evident from CV)
-- Start with the overall assessment and score rationale
-- Highlight 2-3 key strengths that align with the job
-- Identify 1-2 main skill gaps or areas for development (if any)
-- Be encouraging yet honest - focus on facts, not subjective opinions
-- Use specific examples from their skills and the job requirements
+STEP 1: SCORE CRITICAL REQUIREMENTS (60 points maximum)
+───────────────────────────────────────────────────────────────────────
+For EACH requirement in criticalRequirements:
 
+a) Check if candidate has this skill:
+   - Search in: technicalSkills, professionalSkills, qualifications
+   - Ignore softSkills for critical technical requirements
+
+b) Assign match score:
+   - FULL MATCH: Exact skill or directly equivalent → 1.0 point
+     Example: Requirement "Python" matches skill "Python" = 1.0
+
+   - PARTIAL MATCH: Related/adjacent skill that partially satisfies → 0.5 points
+     Example: Requirement "Python" partially matches "Programming experience" = 0.5
+     Example: Requirement "LLM systems" partially matches "AI/ML knowledge" = 0.5
+
+   - NO MATCH: Skill not present or no relevant alternative → 0.0 points
+     Example: Requirement "Python" vs candidate has only "Stakeholder engagement" = 0.0
+
+c) Calculate Critical Score:
+   Critical Score = (Sum of all match scores / Total critical requirements) × 60
+
+   Example: 5 critical requirements, matches = [1.0, 0.5, 0.0, 0.0, 1.0]
+   Critical Score = (2.5 / 5) × 60 = 30 points
+
+d) CHECK FOR HARD CAP:
+   Critical Match Percentage = (Sum of match scores / Total critical requirements) × 100
+
+   IF Critical Match < 30%%:
+     → HARD CAP = 35 (maximum possible total score)
+     → Track reason: "Missing 70%%+ of critical requirements"
+
+   ELSE IF Critical Match < 50%%:
+     → HARD CAP = 55 (maximum possible total score)
+     → Track reason: "Missing 50%%+ of critical requirements"
+
+   ELSE:
+     → No hard cap applied
+
+STEP 2: SCORE IMPORTANT REQUIREMENTS (25 points maximum)
+───────────────────────────────────────────────────────────────────────
+Apply same matching logic as Step 1 to importantRequirements.
+Search in: technicalSkills, professionalSkills, qualifications, softSkills
+
+Important Score = (Sum of match scores / Total important requirements) × 25
+
+If no important requirements exist, assign 25 points (candidate not penalized).
+
+STEP 3: SCORE SUPPORTING REQUIREMENTS (15 points maximum)
+───────────────────────────────────────────────────────────────────────
+Apply same matching logic to supportingRequirements.
+Search in: ALL skill categories including softSkills
+
+Supporting Score = (Sum of match scores / Total supporting requirements) × 15
+
+If no supporting requirements exist, assign 15 points.
+
+STEP 4: CALCULATE FINAL SCORE
+───────────────────────────────────────────────────────────────────────
+Preliminary Score = Critical Score + Important Score + Supporting Score
+
+IF hard cap was triggered in Step 1:
+   Final Score = MINIMUM(Preliminary Score, Hard Cap Value)
+ELSE:
+   Final Score = Preliminary Score
+
+Round to nearest integer (0-100).
+
+═══════════════════════════════════════════════════════════════════════
+WORKED EXAMPLE:
+═══════════════════════════════════════════════════════════════════════
+
+Job Requirements:
+- criticalRequirements: ["Python programming", "JavaScript", "5+ years software development", "LLM systems experience"]
+- importantRequirements: ["PRINCE2 certification", "Agile methodology"]
+- supportingRequirements: ["Communication skills", "Team collaboration"]
+
+Candidate Skills:
+- technicalSkills: []
+- professionalSkills: ["PRINCE2 Practitioner", "Stakeholder engagement", "Project management"]
+- softSkills: ["Communication", "Leadership"]
+- qualifications: ["PRINCE2 Practitioner", "BA Business Studies"]
+
+STEP 1: Critical Requirements (4 total)
+- "Python programming": NO MATCH → 0.0
+- "JavaScript": NO MATCH → 0.0
+- "5+ years software development": NO MATCH → 0.0
+- "LLM systems experience": NO MATCH → 0.0
+Total: 0.0 / 4 = 0%% match
+Critical Score = (0/4) × 60 = 0 points
+HARD CAP TRIGGERED: 0%% < 30%% → Max score = 35
+
+STEP 2: Important Requirements (2 total)
+- "PRINCE2 certification": FULL MATCH (in qualifications) → 1.0
+- "Agile methodology": NO MATCH → 0.0
+Total: 1.0 / 2 = 50%% match
+Important Score = (1/2) × 25 = 12.5 points
+
+STEP 3: Supporting Requirements (2 total)
+- "Communication skills": FULL MATCH (in softSkills) → 1.0
+- "Team collaboration": PARTIAL MATCH ("Leadership" implies collaboration) → 0.5
+Total: 1.5 / 2 = 75%% match
+Supporting Score = (1.5/2) × 15 = 11.25 points
+
+STEP 4: Final Calculation
+Preliminary Score = 0 + 12.5 + 11.25 = 23.75 ≈ 24
+Hard Cap = 35
+Final Score = min(24, 35) = 24 points
+
+═══════════════════════════════════════════════════════════════════════
+EXPLANATION WRITING GUIDE (150-200 words):
+═══════════════════════════════════════════════════════════════════════
+
+Address the candidate directly using "you" (or their name if evident).
+
+Required Structure:
+
+[1] OPENING (1-2 sentences):
+    State the score and overall fit level clearly.
+    Example: "You scored 24%%, indicating a poor fit for this software engineering role due to missing core technical requirements."
+
+[2] CRITICAL REQUIREMENTS ANALYSIS (2-3 sentences):
+    - List which critical requirements are MET (if any) with specific evidence
+    - List which critical requirements are MISSING and why this matters
+    - Be specific with skill names
+    Example: "The role requires Python, JavaScript, and LLM systems experience—none of which appear in your background. Without hands-on software development experience, you lack the fundamental technical foundation for this position."
+
+[3] STRENGTHS (1-2 sentences):
+    Highlight genuine matches in important/supporting areas
+    Example: "Your PRINCE2 certification and strong stakeholder engagement skills do align with the project coordination aspects of the role."
+
+[4] KEY GAPS (1-2 sentences):
+    Be direct about what's missing for success
+    Example: "However, the 60%% weight on technical skills means these soft skills cannot compensate for the absent programming expertise."
+
+[5] CONCLUSION (1 sentence):
+    Provide realistic, actionable guidance
+    - Low scores (<40): Suggest skill development or different role types
+    - Medium scores (40-69): Suggest upskilling in specific areas
+    - High scores (70+): Confirm strong candidacy
+
+TONE REQUIREMENTS:
+✓ Professional, honest, specific, evidence-based
+✓ Respectful but direct—don't sugar-coat major gaps
+✓ Reference actual skills from the candidate's profile
+✗ Don't overstate "transferable skills" when fundamentals are missing
+✗ Don't use vague phrases like "with some training" without specifics
+✗ Don't be artificially encouraging when fit is genuinely poor
+
+═══════════════════════════════════════════════════════════════════════
 OUTPUT FORMAT:
-FitScore {
-  score: <integer 0-100>,
-  explanation: "<concise, candidate-focused text>"
+═══════════════════════════════════════════════════════════════════════
+
+Return a valid FitScore object:
+{
+  "score": <integer 0-100>,
+  "explanation": "<candidate-focused analysis following structure above>"
 }
+
+Now calculate the fit score using the methodology above.

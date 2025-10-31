@@ -938,5 +938,48 @@
     });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script>
+    // Format explanation text into readable paragraphs
+    window.addEventListener('DOMContentLoaded', function() {
+        var explanationDiv = document.getElementById('explanationText');
+        if (explanationDiv && explanationDiv.textContent) {
+            var text = explanationDiv.textContent.trim();
+
+            // Split into sentences
+            var sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+
+            // Group sentences into paragraphs (every 2-3 sentences)
+            var paragraphs = [];
+            var currentParagraph = [];
+
+            sentences.forEach(function(sentence, index) {
+                sentence = sentence.trim();
+                currentParagraph.push(sentence);
+
+                // Create paragraph every 2-3 sentences or at certain keywords
+                var shouldBreak = currentParagraph.length >= 2 && (
+                    sentence.toLowerCase().includes('however') ||
+                    sentence.toLowerCase().includes('your strengths') ||
+                    sentence.toLowerCase().includes('to be competitive') ||
+                    sentence.toLowerCase().includes('you would need') ||
+                    currentParagraph.length >= 3
+                );
+
+                if (shouldBreak || index === sentences.length - 1) {
+                    paragraphs.push(currentParagraph.join(' '));
+                    currentParagraph = [];
+                }
+            });
+
+            // Create formatted HTML with paragraphs
+            var formattedHTML = paragraphs.map(function(para) {
+                return '<p class="mb-3">' + para + '</p>';
+            }).join('');
+
+            // Replace content with formatted version
+            explanationDiv.innerHTML = formattedHTML;
+        }
+    });
+</script>
 </body>
 </html>

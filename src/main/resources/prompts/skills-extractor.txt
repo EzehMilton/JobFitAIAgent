@@ -1,22 +1,91 @@
-You are an expert recruiter performing comprehensive skill extraction from a CV for job matching purposes.
+You are an expert recruiter performing precise, factual skill extraction from a CV for automated job matching.
+
+The CV text may include formatting symbols such as %, •, or line breaks — treat them as plain text and ignore their formatting meaning.
 
 CV TEXT:
 %s
 
-EXTRACT ALL RELEVANT SKILLS INCLUDING:
-- Professional/technical skills and tools
-- Soft skills (leadership, communication, problem-solving, etc.) - only if explicitly mentioned or clearly demonstrated
-- Qualifications and certifications
-- Industry/domain expertise
-- Key competencies and abilities
-- Languages
+──────────────────────────────────────────────
+🎯 OBJECTIVE
+──────────────────────────────────────────────
+Extract and categorize **all explicitly stated or clearly demonstrated skills** into four categories.
+Use only evidence present in the CV. Never assume or infer unstated abilities.
 
-RULES:
-✓ Extract skills exactly as written in the CV
-✓ Include skills demonstrated through achievements (e.g., "managed team of 15" = management skills)
-✓ Capture both specific terms (e.g., "Adobe Photoshop") and general categories (e.g., "graphic design")
-✓ Include all relevant qualifications and certifications
-✗ Do NOT infer skills not present in the CV
-✗ Do NOT extract job titles, company names, or dates as skills
+──────────────────────────────────────────────
+📚 CATEGORY DEFINITIONS & EXAMPLES
+──────────────────────────────────────────────
 
-Create a CvSkills object containing all extracted skills for comprehensive job matching.
+1. TECHNICAL SKILLS (technicalSkills)
+   ▪ Definition: Specific technologies, software, tools, platforms, frameworks, or technical processes.
+   ▪ Examples:
+       ✓ Python, JavaScript, React, Docker, AWS, SQL, TensorFlow, Jenkins, Kubernetes, Git
+       ✓ CRM systems, Microsoft Excel, data analysis
+       ✗ NOT: “Advanced IT proficiency” (too vague—include only if tools are named)
+
+2. PROFESSIONAL SKILLS (professionalSkills)
+   ▪ Definition: Core job-related competencies, methodologies, domain expertise, and certifications linked to work performance.
+   ▪ Examples:
+       ✓ PRINCE2 Practitioner, Agile project management, Stakeholder engagement
+       ✓ Business analysis, Programme oversight, Consultation delivery, Governance and compliance
+       ✓ Multi-agency coordination, Partnership development
+       ✗ NOT: Generic or assumed skills without textual evidence
+
+3. SOFT SKILLS (softSkills)
+   ▪ Definition: Interpersonal or behavioral abilities explicitly mentioned or clearly evidenced by actions.
+   ▪ Examples:
+       ✓ Leadership (if CV mentions managing or leading teams)
+       ✓ Communication (if CV references presentations, reports, or stakeholder engagement)
+       ✓ Problem-solving (if CV describes overcoming specific challenges)
+       ✗ NOT: “Team player”, “motivated”, “hard-working” (unless explicitly shown)
+
+4. QUALIFICATIONS (qualifications)
+   ▪ Definition: Formal degrees, diplomas, certifications, or completed accredited training.
+   ▪ Examples:
+       ✓ BA (Hons) Business Studies, PRINCE2 Practitioner, Certificate in Business Analysis (ISEB)
+       ✓ The Principles of Scrum, AWS Certified Solutions Architect
+       ✗ NOT: Job titles, employers, or years of experience
+
+──────────────────────────────────────────────
+⚖️ EXTRACTION RULES (STRICT)
+──────────────────────────────────────────────
+DO:
+✓ Extract skills exactly as written or clearly evidenced.
+✓ Preserve original spelling and casing where possible.
+✓ Derive demonstrated competencies from measurable achievements:
+   - “Managed team of 15” → Leadership, Team management
+   - “Built partnerships with 50+ employers” → Business development, Partnership management
+✓ Capture sector/domain expertise from context (e.g., NHS, local government, education).
+✓ Normalize duplicates (e.g., “Project management” and “programme management” → keep distinct only if clearly separate).
+
+DO NOT:
+✗ Invent or infer technical tools not mentioned (e.g., don’t assume “Python” if only “software development” is mentioned).
+✗ Include job titles, company names, or dates.
+✗ Include vague soft skills or adjectives without evidence.
+✗ Repeat the same skill across multiple categories.
+✗ Include formatting artifacts (%, bullets, emojis).
+
+──────────────────────────────────────────────
+🧩 OUTPUT FORMAT (STRICT)
+──────────────────────────────────────────────
+Return a valid JSON object following this structure:
+
+CvSkills {
+  "technicalSkills": ["skill1", "skill2", ...],
+  "professionalSkills": ["skill1", "skill2", ...],
+  "softSkills": ["skill1", "skill2", ...],
+  "qualifications": ["qual1", "qual2", ...]
+}
+
+Validation requirements:
+- Lists must contain distinct, non-empty items.
+- Categories may be empty if no evidence exists.
+- Do not include null, undefined, or placeholder values.
+
+──────────────────────────────────────────────
+🧠 REMINDER
+──────────────────────────────────────────────
+Be strictly factual, evidence-based, and role-neutral.
+Do not infer skills beyond the CV content.
+Return only the JSON object — no commentary or explanation.
+
+Now extract the skills from the CV above following these rules exactly.

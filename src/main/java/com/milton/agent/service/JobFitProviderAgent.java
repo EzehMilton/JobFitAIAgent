@@ -21,7 +21,7 @@ import org.springframework.util.Assert;
 @Slf4j
 @Agent(name = "job-fit-provider",
         description = "Assesses how well a CV matches a job description and provides a fit score with an explanation",
-        version = "1.0.0",
+        version = "0.0.1",
         beanName = "jobFitProviderAgent")
 @RequiredArgsConstructor
 @Profile("prod")
@@ -34,6 +34,9 @@ public class JobFitProviderAgent {
         log.info("Extracting key skills from CV" );
 
         String skillsExtractorPrompt = promptLoader.loadPrompt("skills-extractor.txt");
+        String cvText = request.CvText();
+        String prompt = skillsExtractorPrompt + "\n\nCV TEXT:\n" + cvText;
+
 
         CvSkills cvSkills = context.ai()
                 .withLlm(LlmOptions
@@ -44,18 +47,23 @@ public class JobFitProviderAgent {
                         .withPresencePenalty(0.0)
                         .withMaxTokens(3000)
                 )
-                .createObject(skillsExtractorPrompt.formatted(request.CvText()),
+                .createObject(prompt,
                         CvSkills.class);
 
         Assert.notNull(cvSkills, "CV skills cannot be null");
         log.info("Skills extracted: {}", cvSkills);
         return cvSkills;
     }
+
     @Action
     public JobRequirements extractJobRequirements(JobFitRequest request, OperationContext context) {
         log.info("Extracting a list of key requirements from job description");
 
         String jobDescriptionPrompt = promptLoader.loadPrompt("job-description-extractor.txt");
+
+        String prompt =
+                jobDescriptionPrompt + "\n\nJOB DESCRIPTION:\n" +
+                        (request.JobDescription() == null ? "" : request.JobDescription());
 
         JobRequirements requirements = context.ai()
                 .withLlm(LlmOptions
@@ -66,15 +74,14 @@ public class JobFitProviderAgent {
                         .withPresencePenalty(0.0)
                         .withMaxTokens(3000)
                 )
-                .createObject(
-                        jobDescriptionPrompt.formatted(request.JobDescription()),
-                        JobRequirements.class
-                );
+                .createObject(prompt, JobRequirements.class);
 
         Assert.notNull(requirements, "Job requirements cannot be null");
         log.info("Job requirements extracted: {}", requirements);
         return requirements;
     }
+
+
 
     @AchievesGoal(description = "Computes the fit score between CV and job description")
     @Action
@@ -82,7 +89,10 @@ public class JobFitProviderAgent {
         log.info("Calculating fit score for CV skills: {} and job requirements: {}", cvSkills, jobRequirements);
 
         String promptTemplate = promptLoader.loadPrompt("jobfit-fit-score.txt");
-        String finalPrompt = promptTemplate.formatted(cvSkills.skills(), jobRequirements.requirements());
+        String finalPrompt = promptTemplate.formatted(
+                cvSkills,
+                jobRequirements
+        );
         log.info("Final Prompt: {}", finalPrompt);
 
         FitScore fitScore = context.ai()
