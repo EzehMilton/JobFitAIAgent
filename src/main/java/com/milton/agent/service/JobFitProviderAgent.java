@@ -97,7 +97,7 @@ public class JobFitProviderAgent {
 
         FitScore fitScore = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_41_MINI)
+                        .withModel(OpenAiModels.GPT_5)
                         .withTemperature(0.2)
                         .withTopP(0.95)
                         .withFrequencyPenalty(0.0)
