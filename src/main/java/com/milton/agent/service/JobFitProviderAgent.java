@@ -40,12 +40,12 @@ public class JobFitProviderAgent {
 
         CvSkills cvSkills = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_41_NANO)
-                        .withTemperature(0.2)
+                        .withModel(OpenAiModels.GPT_41_MINI)
+                        .withTemperature(0.1)
                         .withTopP(0.90)
                         .withFrequencyPenalty(0.0)
                         .withPresencePenalty(0.0)
-                        .withMaxTokens(3000)
+                        .withMaxTokens(500)
                 )
                 .createObject(prompt,
                         CvSkills.class);
@@ -67,12 +67,12 @@ public class JobFitProviderAgent {
 
         JobRequirements requirements = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_41_NANO)
+                        .withModel(OpenAiModels.GPT_41_MINI)
                         .withTemperature(0.2)
                         .withTopP(0.90)
                         .withFrequencyPenalty(0.0)
                         .withPresencePenalty(0.0)
-                        .withMaxTokens(3000)
+                        .withMaxTokens(600)
                 )
                 .createObject(prompt, JobRequirements.class);
 
@@ -98,11 +98,6 @@ public class JobFitProviderAgent {
         FitScore fitScore = context.ai()
                 .withLlm(LlmOptions
                         .withModel(OpenAiModels.GPT_5)
-                        .withTemperature(0.2)
-                        .withTopP(0.95)
-                        .withFrequencyPenalty(0.0)
-                        .withPresencePenalty(0.0)
-                        .withThinking(Thinking.withTokenBudget(10))
                 )
                 .createObject(finalPrompt, FitScore.class);
 

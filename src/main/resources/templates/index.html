@@ -421,20 +421,6 @@
             max-width: 400px;
         }
 
-        .spinner-custom {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #f3f4f6;
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1.5rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
         .loading-content h3 {
             font-size: 1.25rem;
             font-weight: 700;
@@ -445,17 +431,6 @@
         .loading-content p {
             color: #718096;
             margin: 0;
-        }
-
-        .alert {
-            border-radius: 12px;
-            border: none;
-            padding: 1rem 1.5rem;
-        }
-
-        .alert-danger {
-            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
-            color: #c53030;
         }
 
         .footer-text {
@@ -644,7 +619,7 @@
                         <i class="fas fa-chart-line"></i>
                         Job Fit Scorer
                     </h1>
-                    <div class="subtitle">Analyze your CV against job requirements with AI-powered insights</div>
+                    <div class="subtitle">Analyse your CV against job requirements with AI-powered insights</div>
                 </div>
 
                 <div class="card-body p-4 p-md-5">
@@ -658,19 +633,20 @@
                         <div class="rate-limit-content">
                             <i class="fas fa-chart-bar me-2"></i>
                             <span class="rate-limit-text">
-                                <strong>Beta Version (Free):</strong>
-                                <span th:text="${remainingRequests}">3</span> of 3 attempts remaining
-                            </span>
+                  <strong>Beta Version (Free):</strong>
+                  <span th:text="${remainingRequests}">5</span> of 5 attempts remaining today.
+                </span>
                         </div>
                         <div class="rate-limit-dots">
                             <span class="rate-dot" th:classappend="${usedRequests >= 1 ? 'used' : ''}"></span>
                             <span class="rate-dot" th:classappend="${usedRequests >= 2 ? 'used' : ''}"></span>
                             <span class="rate-dot" th:classappend="${usedRequests >= 3 ? 'used' : ''}"></span>
+                            <span class="rate-dot" th:classappend="${usedRequests >= 4 ? 'used' : ''}"></span>
+                            <span class="rate-dot" th:classappend="${usedRequests >= 5 ? 'used' : ''}"></span>
                         </div>
                     </div>
 
                     <form id="scoreForm" enctype="multipart/form-data">
-
                         <!-- Reuse CV Section (shown only if CV exists in session) -->
                         <div th:if="${storedCvName}" class="mb-4">
                             <div class="stored-cv-banner">
@@ -729,7 +705,7 @@
 
                         <div class="info-note mb-4">
                             <i class="fas fa-info-circle"></i>
-                            <span>Analysis typically takes 10-60 seconds. Your data is processed securely and not stored.</span>
+                            <span>Analysis typically takes 1-3 minutes. Your data is processed securely and not stored.</span>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center">
@@ -812,17 +788,25 @@
     </div>
 </div>
 
-<!-- Loading overlay -->
+<!-- Loading overlay with progress bar -->
 <div id="loadingOverlay" class="loading-overlay d-none" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="loading-content">
-        <div class="spinner-custom"></div>
-        <h3>Analyzing Your Match</h3>
-        <p>This may take up to a minute. Please don't close the page.</p>
+        <h3>Deep-Dive in Progress</h3>
+        <p>Your CV and the job description are being analysed thoroughly. It may take up to a minute or more. Please don’t navigate away. Your report is just moments away.</p>
+
+        <div class="progress mb-3" style="height: 20px;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                 role="progressbar" aria-label="Matching progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                 style="width: 0%"></div>
+        </div>
+        <p class="text-muted" id="progressLabel">Starting…</p>
+        <p><em>Tip: feel free to get a coffee, but don’t close or navigate away — your session is still working.</em></p>
     </div>
 </div>
 
+
 <script>
-    // AJAX-BASED FORM SUBMISSION - BYPASSES HTML5 VALIDATION
+    // AJAX-BASED FORM SUBMISSION
     window.addEventListener('DOMContentLoaded', function() {
         console.log('=== Page loaded - AJAX mode ===');
 
@@ -832,6 +816,8 @@
         var jobDescTextarea = document.getElementById('jobDescription');
         var reuseCvCheckbox = document.getElementById('reuseCv');
         var overlay = document.getElementById('loadingOverlay');
+        var progressBar = document.getElementById('progressBar');
+        var progressLabel = document.getElementById('progressLabel');
 
         // Handle CV reuse checkbox
         if (reuseCvCheckbox) {
@@ -864,7 +850,7 @@
             });
         }
 
-        // AJAX FORM SUBMISSION
+        // Form submission handler
         submitBtn.addEventListener('click', function(e) {
             e.preventDefault();
             console.log('=== Submit button clicked (AJAX) ===');
@@ -889,14 +875,30 @@
                 return;
             }
 
-            // Show loading
+            // Show loading with progress bar
             overlay.classList.remove('d-none');
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing…';
+
+            // Start simulated progress (for now)
+            var elapsed = 0;
+            var estimated = 60; // seconds, adjust if you expect longer
+            var interval = setInterval(function() {
+                elapsed++;
+                var percent = Math.min(Math.round((elapsed / estimated) * 90), 90);
+                progressBar.style.width = percent + '%';
+                progressBar.setAttribute('aria-valuenow', percent);
+                progressLabel.textContent = 'Analysing your profile… ' + Math.ceil((estimated - elapsed)) + 's remaining';
+
+                if (elapsed >= estimated) {
+                    clearInterval(interval);
+                    // now hold at ~90% until real result comes
+                    progressLabel.textContent = 'Finalising results…';
+                }
+            }, 1000);
 
             // Build form data
             var formData = new FormData();
-
             if (isReusing) {
                 formData.append('reuseCv', 'true');
                 console.log('Submitting with reuseCv=true');
@@ -904,10 +906,8 @@
                 formData.append('candidateFile', fileInput.files[0]);
                 console.log('Submitting with file:', fileInput.files[0].name);
             }
-
             formData.append('jobDescription', jobDesc);
 
-            // Submit via AJAX
             console.log('Sending AJAX request to /generate');
             fetch('/generate', {
                 method: 'POST',
@@ -922,7 +922,11 @@
                 })
                 .then(function(html) {
                     console.log('Success! Replacing page content');
-                    // Replace entire page with response
+                    // Update to 100%
+                    progressBar.style.width = '100%';
+                    progressBar.setAttribute('aria-valuenow', 100);
+                    progressLabel.textContent = 'Loading results…';
+                    // Replace entire page with server response
                     document.open();
                     document.write(html);
                     document.close();
@@ -933,51 +937,42 @@
                     overlay.classList.add('d-none');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-magic me-2"></i>Generate Score';
+                    clearInterval(interval);
                 });
         });
     });
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
 <script>
     // Format explanation text into readable paragraphs
     window.addEventListener('DOMContentLoaded', function() {
         var explanationDiv = document.getElementById('explanationText');
         if (explanationDiv && explanationDiv.textContent) {
             var text = explanationDiv.textContent.trim();
-
-            // Split into sentences
             var sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-
-            // Group sentences into paragraphs (every 2-3 sentences)
             var paragraphs = [];
-            var currentParagraph = [];
-
+            var current = [];
             sentences.forEach(function(sentence, index) {
                 sentence = sentence.trim();
-                currentParagraph.push(sentence);
-
-                // Create paragraph every 2-3 sentences or at certain keywords
-                var shouldBreak = currentParagraph.length >= 2 && (
+                current.push(sentence);
+                var shouldBreak = current.length >= 2 && (
                     sentence.toLowerCase().includes('however') ||
                     sentence.toLowerCase().includes('your strengths') ||
                     sentence.toLowerCase().includes('to be competitive') ||
                     sentence.toLowerCase().includes('you would need') ||
-                    currentParagraph.length >= 3
+                    current.length >= 3
                 );
-
                 if (shouldBreak || index === sentences.length - 1) {
-                    paragraphs.push(currentParagraph.join(' '));
-                    currentParagraph = [];
+                    paragraphs.push(current.join(' '));
+                    current = [];
                 }
             });
-
-            // Create formatted HTML with paragraphs
-            var formattedHTML = paragraphs.map(function(para) {
-                return '<p class="mb-3">' + para + '</p>';
+            var html = paragraphs.map(function(p) {
+                return '<p class="mb-3">' + p + '</p>';
             }).join('');
-
-            // Replace content with formatted version
-            explanationDiv.innerHTML = formattedHTML;
+            explanationDiv.innerHTML = html;
         }
     });
 </script>
