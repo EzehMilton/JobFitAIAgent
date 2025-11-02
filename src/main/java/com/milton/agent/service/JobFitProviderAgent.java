@@ -51,7 +51,7 @@ public class JobFitProviderAgent {
                         CvSkills.class);
 
         Assert.notNull(cvSkills, "CV skills cannot be null");
-        log.info("Skills extracted: {}", cvSkills);
+        log.info("Skills extracted from CV");
         return cvSkills;
     }
 
@@ -77,7 +77,7 @@ public class JobFitProviderAgent {
                 .createObject(prompt, JobRequirements.class);
 
         Assert.notNull(requirements, "Job requirements cannot be null");
-        log.info("Job requirements extracted: {}", requirements);
+        log.info("Job requirements extracted from pasted requirements");
         return requirements;
     }
 
@@ -86,14 +86,14 @@ public class JobFitProviderAgent {
     @AchievesGoal(description = "Computes the fit score between CV and job description")
     @Action
     public FitScore calculateFitScore(CvSkills cvSkills, JobRequirements jobRequirements, OperationContext context) {
-        log.info("Calculating fit score for CV skills: {} and job requirements: {}", cvSkills, jobRequirements);
+        log.info("Calculating fit score for CV skills and job requirements");
 
         String promptTemplate = promptLoader.loadPrompt("jobfit-fit-score.txt");
         String finalPrompt = promptTemplate.formatted(
                 cvSkills,
                 jobRequirements
         );
-        log.info("Final Prompt: {}", finalPrompt);
+        log.debug("Final Prompt: {}", finalPrompt);
 
         FitScore fitScore = context.ai()
                 .withLlm(LlmOptions
