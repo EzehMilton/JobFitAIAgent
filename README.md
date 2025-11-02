@@ -1,110 +1,157 @@
 Job Fit Agent
 
-A minimal Spring Boot service that uses Embabel Agents (LLM orchestration) to compute how well a candidate CV matches a given job description. It extracts skills and requirements using an LLM, then returns a numeric fit score and a short explanation.
+A Spring Boot web application that uses Embabel Agents (LLM orchestration) to analyze how well a candidate's CV matches a job description. It features both a responsive web interface and REST API endpoints for CV-to-job matching with AI-powered insights.
 
 Key technologies
-- Java 25, (Spring Boot 3)
+- Java 21 (Spring Boot 3.5.6)
 - Embabel Agent Starter (LLM agent framework)
-- OpenAI (default LLM, configurable)
+- OpenAI GPT models (gpt-4o-mini, gpt-5)
+- Thymeleaf (web UI templating)
+- Apache PDFBox (PDF text extraction)
+- Bootstrap 5 (responsive UI)
 - Maven
 
 Features
-- Single REST endpoint POST /score
-- Extracts skills from CV text and requirements from job description using an LLM
-- Computes a 0–100 fit score with a brief explanation
-- Pluggable LLM via Embabel configuration (OpenAI by default)
+- Modern responsive web interface with drag-and-drop PDF upload
+- CV session storage for reuse across multiple job analyses
+- Rate limiting (5 free analyses per IP per day)
+- PDF text extraction from CV and job description files
+- AI-powered skill extraction and job requirement analysis
+- 0–100 fit score with detailed explanation
+- REST API endpoints for programmatic access
+- Real-time progress tracking during analysis
 
 Project layout
-- src/main/java/com/milton/agent/JobFitAgentApplication.java – Spring Boot app entry point, enables Embabel Agents
-- src/main/java/com/milton/agent/controller/JobFitProviderController.java – REST controller exposing /score
-- src/main/java/com/milton/agent/service/JobFitProviderAgent.java – Agent actions that interact with the LLM
-- src/main/java/com/milton/agent/models – Simple records for request/response and intermediate objects
-- src/main/resources/application.properties – Embabel/OpenAI configuration and logging
-- pom.xml – Maven build, Embabel repositories and dependencies
+- src/main/java/com/milton/agent/JobFitAgentApplication.java – Spring Boot app entry point
+- src/main/java/com/milton/agent/controller/UiController.java – Web interface controller
+- src/main/java/com/milton/agent/controller/JobFitProviderController.java – REST API controller
+- src/main/java/com/milton/agent/service/JobFitProviderAgent.java – AI agent for CV/job analysis
+- src/main/java/com/milton/agent/service/RateLimitService.java – IP-based rate limiting
+- src/main/java/com/milton/agent/service/PDFTextExtratorImpl.java – PDF text extraction
+- src/main/java/com/milton/agent/models – Data models and records
+- src/main/resources/templates/index.html – Responsive web interface
+- src/main/resources/prompts/ – AI prompts for extraction and scoring
+- src/main/resources/application.properties – Configuration
+- pom.xml – Maven dependencies and build configuration
 
 Prerequisites
-- Java Development Kit (JDK) 21 or newer. The project is configured with <java.version>25</java.version> in pom.xml. If you use an older JDK, either:
-  - set your JAVA_HOME to a JDK that can target Java 25, or
-  - lower the Java version in pom.xml to match your JDK (e.g., 21) and rebuild.
-- Maven (wrapper included: mvnw/mvnw.cmd), or a compatible IDE (IntelliJ IDEA) with Maven support
-- An OpenAI API key if you use the default OpenAI LLM
+- Java Development Kit (JDK) 21 or newer
+- Maven (wrapper included: mvnw/mvnw.cmd), or compatible IDE
+- OpenAI API key for LLM access
 
 Configuration
-The application reads Embabel LLM settings from src/main/resources/application.properties. Defaults are provided for OpenAI:
+The application reads settings from src/main/resources/application.properties:
 
-- embabel.ai.default-llm=openai
-- embabel.ai.openai.api-key=${OPENAI_API_KEY}
-- embabel.ai.openai.model=gpt-4o-mini
-- embabel.ai.openai.base-url=https://api.openai.com/v1
-- embabel.ai.openai.timeout=60s
-- embabel.ai.openai.temperature=0.2
-- embabel.ai.openai.max-tokens=1024
+```properties
+# Embabel AI Configuration
+embabel.ai.default-llm=openai
+embabel.ai.openai.api-key=${OPENAI_API_KEY}
+embabel.ai.openai.model=gpt-4o-mini
+embabel.ai.openai.base-url=https://api.openai.com/v1
+embabel.ai.openai.timeout=60s
+embabel.ai.openai.temperature=0.2
+embabel.ai.openai.max-tokens=1024
 
-Set your OpenAI key as an environment variable before running:
-- macOS/Linux: export OPENAI_API_KEY=sk-... 
-- Windows (PowerShell): $Env:OPENAI_API_KEY="sk-..."
+# File Upload Limits
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+```
 
-You may change the model, base URL, or switch to another LLM supported by Embabel by updating the properties accordingly.
+Set your OpenAI API key as an environment variable:
+- macOS/Linux: `export OPENAI_API_KEY=sk-...`
+- Windows: `$Env:OPENAI_API_KEY="sk-..."`
 
 Build and run
-Using Maven Wrapper (recommended):
-- macOS/Linux: ./mvnw spring-boot:run
-- Windows: mvnw.cmd spring-boot:run
+Using Maven Wrapper:
+```bash
+# macOS/Linux
+./mvnw spring-boot:run
 
-Alternatively, build a jar and run it:
-- ./mvnw clean package
-- java -jar target/agent-0.0.1-SNAPSHOT.jar
+# Windows
+mvnw.cmd spring-boot:run
+```
 
-API usage
-Endpoint
-- POST /score
-- Content-Type: application/json
+Alternatively, build and run as JAR:
+```bash
+./mvnw clean package
+java -jar target/agent-0.0.1-SNAPSHOT.jar
+```
 
-Request body (JobFitRequest):
+Usage
+
+Web Interface
+1. Navigate to http://localhost:8080
+2. Upload your CV (PDF format, max 10MB)
+3. Paste the job description text
+4. Click "Generate Score" to analyze
+5. View detailed results with score and explanation
+6. Optionally reuse your CV for analyzing multiple jobs
+
+REST API Endpoints
+
+**PDF Upload Endpoint**
+- `POST /score`
+- Content-Type: `multipart/form-data`
+- Parameters:
+  - `candidateFile`: PDF file containing CV
+  - `jobDescriptionFile`: PDF file containing job description
+
+**Web Form Endpoint**
+- `POST /generate`
+- Content-Type: `multipart/form-data`
+- Parameters:
+  - `candidateFile`: PDF file (optional if reusing)
+  - `reuseCv`: boolean to reuse stored CV
+  - `jobDescription`: text content of job description
+
+Response format (FitScore):
+```json
 {
-  "CvText": "Senior Java developer with Spring Boot, REST APIs, AWS, Docker...",
-  "JobDescription": "Looking for a backend engineer with Java, Spring Boot, REST, cloud experience..."
+  "score": 85,
+  "explanation": "Strong alignment in Java and Spring Boot expertise. Your 5+ years of REST API development directly matches their requirements..."
 }
+```
 
-Response body (FitScore):
-{
-  "score": 82,
-  "explanation": "Strong overlap in Java, Spring Boot, and REST. Some gaps in Kubernetes and CI/CD."
-}
-
-Example with curl
-curl -X POST "http://localhost:8080/score" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "CvText": "Senior Java developer with Spring Boot, REST APIs, AWS, Docker...",
-        "JobDescription": "Looking for a backend engineer with Java, Spring Boot, REST, cloud experience..."
-      }'
-
-Notes
-- Property names in JobFitRequest are capitalized (CvText, JobDescription). Make sure your JSON uses those exact names.
-- The service relies on live calls to the configured LLM provider. Network access and valid credentials are required for meaningful results.
+Rate Limiting
+- Free tier: 5 analyses per IP address per day
+- Resets at midnight UTC
+- Session CV storage allows multiple job comparisons without re-upload
 
 Testing
 Run unit tests:
-- ./mvnw test
-
-There is a basic Spring context test at src/test/java/com/milton/agent/AgentApplicationTests.java.
+```bash
+./mvnw test
+```
 
 Troubleshooting
-- 401/403 from LLM provider: Ensure OPENAI_API_KEY is set and valid.
-- Timeout errors: Increase embabel.ai.openai.timeout or check network connectivity.
-- SSL or corporate proxy issues: Configure JVM/system proxy or set an alternative base URL if using a gateway.
-- Build fails due to Java version: Align <java.version> in pom.xml with your installed JDK (e.g., 21) and re-run the build.
-- Dependency resolution: The pom.xml includes Embabel repositories. If resolution fails behind a firewall, ensure your environment can reach https://repo.embabel.com.
+- **401/403 from OpenAI**: Verify OPENAI_API_KEY is set correctly
+- **File upload errors**: Ensure PDF files are under 10MB
+- **Timeout errors**: Increase `embabel.ai.openai.timeout` value
+- **Rate limit exceeded**: Wait until midnight or clear browser session
+- **Build failures**: Ensure Java 21+ is installed and JAVA_HOME is set
+- **PDF processing errors**: Verify uploaded files are valid PDF format
 
-Extending
-- To adjust scoring logic or add extra signals, modify JobFitProviderAgent.calculateFitScore.
-- To change how skills/requirements are extracted, tweak prompts in extractSkillsFromCv and extractJobRequirements.
-- To add authentication or rate limiting, introduce Spring Boot security and filters in the controller layer.
+Extending the application
+- **Modify scoring logic**: Update `JobFitProviderAgent.calculateFitScore()`
+- **Customize extraction prompts**: Edit files in `src/main/resources/prompts/`
+- **Adjust rate limits**: Modify `MAX_REQUESTS_PER_DAY` in `RateLimitService`
+- **Add authentication**: Implement Spring Security filters
+- **Support other file formats**: Extend `TextExtractor` interface
+
+AI Model Configuration
+The application uses different models for different tasks:
+- Skills extraction: GPT-4o-mini (faster, cost-effective)
+- Job requirements: GPT-4o-mini  
+- Final scoring: GPT-5 (higher quality analysis)
 
 License
-No license specified in this repository. Add a LICENSE file if you intend to distribute.
+No license specified. Add a LICENSE file if distributing.
+
+Contact
+Created by Chikere Ezeh - chikere@gmail.com
 
 Acknowledgements
-- Embabel Agent Starter for agent orchestration
+- Embabel Agent Starter for LLM orchestration
 - Spring Boot for the web framework
+- Apache PDFBox for PDF processing
+- Bootstrap for responsive UI design
