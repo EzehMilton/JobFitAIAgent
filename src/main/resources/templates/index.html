@@ -277,20 +277,65 @@
             letter-spacing: 0.5px;
         }
 
-        .badge.bg-success {
-            background: var(--success-gradient) !important;
+        .match-badge-excellent {
+            background: linear-gradient(135deg, #34d399 0%, #15803d 100%) !important;
+            color: #ffffff !important;
         }
 
-        .badge.bg-info {
-            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%) !important;
+        .match-badge-good {
+            background: linear-gradient(135deg, #fde047 0%, #facc15 100%) !important;
+            color: #1f2937 !important;
         }
 
-        .badge.bg-warning {
-            background: var(--warning-gradient) !important;
+        .match-badge-partial {
+            background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+            color: #ffffff !important;
         }
 
-        .badge.bg-danger {
-            background: linear-gradient(135deg, #f2709c 0%, #ff9472 100%) !important;
+        .match-badge-weak {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+            color: #ffffff !important;
+        }
+
+        .score-section.match-theme-excellent {
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(16, 185, 129, 0.2) 100%);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+
+        .score-section.match-theme-excellent .score-circle {
+            background: linear-gradient(135deg, #34d399 0%, #22c55e 100%);
+            box-shadow: 0 8px 25px rgba(14, 159, 110, 0.35);
+        }
+
+        .score-section.match-theme-good {
+            background: linear-gradient(135deg, rgba(250, 224, 47, 0.2) 0%, rgba(250, 204, 21, 0.25) 100%);
+            border-color: rgba(250, 204, 21, 0.45);
+        }
+
+        .score-section.match-theme-good .score-circle {
+            background: linear-gradient(135deg, #fde047 0%, #facc15 100%);
+            box-shadow: 0 8px 25px rgba(234, 179, 8, 0.35);
+            color: #1f2937;
+        }
+
+        .score-section.match-theme-partial {
+            background: linear-gradient(135deg, rgba(252, 165, 60, 0.18) 0%, rgba(249, 115, 22, 0.22) 100%);
+            border-color: rgba(249, 115, 22, 0.35);
+        }
+
+        .score-section.match-theme-partial .score-circle {
+            background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+            box-shadow: 0 8px 25px rgba(234, 88, 12, 0.35);
+        }
+
+        .score-section.match-theme-weak {
+            background: linear-gradient(135deg, rgba(248, 113, 113, 0.18) 0%, rgba(239, 68, 68, 0.22) 100%);
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .score-section.match-theme-weak .score-circle {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.35);
         }
 
         .explanation-box {
@@ -737,7 +782,7 @@
         </div>
 
         <div class="results-body">
-            <div class="score-section">
+            <div class="score-section" th:classappend="${matchTheme}">
                 <div class="d-flex align-items-center gap-4 mb-4 flex-wrap">
                     <div class="score-circle" th:text="${score}">85</div>
                     <div class="score-info">

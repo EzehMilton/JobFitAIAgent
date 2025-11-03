@@ -139,6 +139,7 @@ public class UiController {
         model.addAttribute("cvName", cvFileName);
         model.addAttribute("matchLabel", toMatchLabel(score));
         model.addAttribute("matchClass", toMatchClass(score));
+        model.addAttribute("matchTheme", toMatchTheme(score));
         model.addAttribute("storedCvName", cvFileName); // Keep showing stored CV option
 
         // Update rate limit info
@@ -160,10 +161,17 @@ public class UiController {
     }
 
     private String toMatchClass(int score) {
-        if (score >= 90) return "bg-success";
-        if (score >= 70) return "bg-primary";
-        if (score >= 50) return "bg-warning text-dark";
-        return "bg-danger";
+        if (score >= 90) return "match-badge-excellent";
+        if (score >= 70) return "match-badge-good";
+        if (score >= 50) return "match-badge-partial";
+        return "match-badge-weak";
+    }
+
+    private String toMatchTheme(int score) {
+        if (score >= 90) return "match-theme-excellent";
+        if (score >= 70) return "match-theme-good";
+        if (score >= 50) return "match-theme-partial";
+        return "match-theme-weak";
     }
 
     @PostMapping("/clear-cv")
