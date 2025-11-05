@@ -140,6 +140,7 @@ public class UiController {
         model.addAttribute("matchLabel", toMatchLabel(score));
         model.addAttribute("matchClass", toMatchClass(score));
         model.addAttribute("matchTheme", toMatchTheme(score));
+        model.addAttribute("showUpgradeButton", shouldShowUpgradeButton(score));
         model.addAttribute("storedCvName", cvFileName); // Keep showing stored CV option
 
         // Update rate limit info
@@ -172,6 +173,10 @@ public class UiController {
         if (score >= 70) return "match-theme-good";
         if (score >= 50) return "match-theme-partial";
         return "match-theme-weak";
+    }
+
+    private boolean shouldShowUpgradeButton(int score) {
+        return score >= 70 && score <= 85;
     }
 
     @PostMapping("/clear-cv")

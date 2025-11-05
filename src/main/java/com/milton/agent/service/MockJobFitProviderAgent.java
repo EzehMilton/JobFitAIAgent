@@ -46,7 +46,7 @@ public class MockJobFitProviderAgent {
     public FitScore calculateFitScore(CvSkills cvSkills, JobRequirements jobRequirements, OperationContext context) {
         log.info("[DEV MOCK] Returning mock fit score");
         return new FitScore(
-                99,
+                97,
                 """
                 Mocked explanation:
                 • Strong overlap on Java and Spring Boot.
