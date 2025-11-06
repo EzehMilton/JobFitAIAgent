@@ -888,7 +888,7 @@
         if (upgradeButton) {
             upgradeButton.addEventListener('click', function(event) {
                 event.preventDefault();
-                console.log('Upgrade CV action pending:', event.currentTarget.dataset.action);
+                window.location.href = '/upgrade-cv';
             });
         }
 

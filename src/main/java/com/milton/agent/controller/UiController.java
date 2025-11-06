@@ -12,6 +12,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Controller
@@ -32,6 +37,42 @@ public class UiController {
 
     private static final String SESSION_CV_TEXT = "storedCvText";
     private static final String SESSION_CV_NAME = "storedCvName";
+    private static final String DUMMY_CV_CONTENT = """
+            JORDAN TAYLOR
+            Email: jordan.taylor@example.com | Phone: (555) 123-4567 | LinkedIn: linkedin.com/in/jordantaylor
+
+            PROFESSIONAL SUMMARY
+            Product manager with 8+ years of experience guiding cross-functional teams to deliver AI-enabled HR solutions.
+            Skilled at translating user research into product strategy, prioritising roadmaps, and launching features that
+            improve talent acquisition outcomes. Passionate about leveraging data and automation to create equitable hiring experiences.
+
+            CORE SKILLS
+            • Product Strategy & Roadmapping • Agile Delivery • Stakeholder Management
+            • UX Research & Experimentation • Data-Driven Decision Making • AI/ML for HR Tech
+
+            EXPERIENCE
+            Senior Product Manager | TalentFlow AI | 2020 - Present | San Francisco, CA
+            - Led launch of “Role Readiness” assessment that increased qualified applicant matches by 27%.
+            - Partnered with data science to deploy GPT-4 powered résumé rewriting assistant with 92% user satisfaction.
+            - Built go-to-market collateral and enablement for enterprise clients across three verticals.
+
+            Product Manager | CareerLaunch Labs | 2016 - 2020 | Remote
+            - Owned roadmap for candidate insights dashboard adopted by 1200+ recruiting teams.
+            - Implemented outcome-based OKRs and experimentation cadence that accelerated release velocity by 35%.
+            - Collaborated with design to run discovery sprints, reducing candidate drop-off by 18%.
+
+            EDUCATION
+            MBA, Strategy & Analytics | Northwestern Kellogg School of Management
+            B.S., Information Systems | University of Washington
+
+            CERTIFICATIONS
+            • Pragmatic Institute Product Management
+            • Certified Scrum Product Owner (CSPO)
+
+            ADDITIONAL HIGHLIGHTS
+            - Speaker at 2023 Talent Innovation Summit on “Personalised CV Experiences with Generative AI”.
+            - Volunteer mentor for Women In Product’s early career accelerator.
+            """;
 
     @GetMapping({"/"})
     public String index(HttpSession session, HttpServletRequest request, Model model) {
@@ -152,6 +193,23 @@ public class UiController {
         log.info("Analysis complete for IP: {}. Remaining requests: {}", ipAddress, remainingRequests);
 
         return "index";
+    }
+
+    @GetMapping("/upgrade-cv")
+    public String showUpgradeCv(Model model) {
+        model.addAttribute("dummyCv", DUMMY_CV_CONTENT);
+        return "upgrade_cv";
+    }
+
+    @GetMapping("/dummy-cv/download")
+    public ResponseEntity<ByteArrayResource> downloadDummyCv() {
+        byte[] data = DUMMY_CV_CONTENT.getBytes(StandardCharsets.UTF_8);
+        ByteArrayResource resource = new ByteArrayResource(data);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"upgrade-role-cv.txt\"")
+                .contentType(MediaType.TEXT_PLAIN)
+                .contentLength(data.length)
+                .body(resource);
     }
 
     private String toMatchLabel(int score) {
