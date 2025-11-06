@@ -8,10 +8,12 @@ import com.embabel.agent.config.models.OpenAiModels;
 import com.embabel.common.ai.model.LlmOptions;
 import com.embabel.common.ai.model.Thinking;
 import com.milton.agent.config.PromptLoader;
+import com.milton.agent.models.CvRewriteRequest;
 import com.milton.agent.models.CvSkills;
 import com.milton.agent.models.FitScore;
 import com.milton.agent.models.JobFitRequest;
 import com.milton.agent.models.JobRequirements;
+import com.milton.agent.models.UpgradedCv;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -103,5 +105,31 @@ public class JobFitProviderAgent {
 
         Assert.notNull(fitScore, "Fit score cannot be null");
         return fitScore;
+    }
+
+    @AchievesGoal(description = "Rewrites candidate CV tailored to target role using ATS keywords")
+    @Action
+    public UpgradedCv rewriteCvForRole(CvRewriteRequest request, OperationContext context) {
+        log.info("Rewriting CV for upgraded version with fit score {}", request.fitScore());
+
+        String promptTemplate = promptLoader.loadPrompt("cv-rewriter.txt");
+        String prompt = promptTemplate.formatted(
+                request.fitScore(),
+                request.fitExplanation(),
+                request.jobDescription(),
+                request.originalCv()
+        );
+
+        UpgradedCv upgradedCv = context.ai()
+                .withLlm(LlmOptions
+                        .withModel(OpenAiModels.GPT_5)
+                        .withTemperature(0.3)
+                        .withTopP(0.9)
+                        .withMaxTokens(1800)
+                )
+                .createObject(prompt, UpgradedCv.class);
+
+        Assert.notNull(upgradedCv, "Upgraded CV cannot be null");
+        return upgradedCv;
     }
 }
