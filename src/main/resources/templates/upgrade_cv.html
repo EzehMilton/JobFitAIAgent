@@ -63,6 +63,22 @@
             overflow-y: auto;
         }
 
+        .insights-card {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .badge-keyword {
+            background: rgba(102, 126, 234, 0.12);
+            color: #4c51bf;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+
         .cv-card__footer {
             padding: 1.75rem 2rem 2rem;
             background: #ffffff;
@@ -94,16 +110,29 @@
 <main class="cv-card" role="main">
     <header class="cv-card__header">
         <h1>Upgraded CV Preview</h1>
-        <p>Tailored for the selected role. Review or download before applying.</p>
+        <p th:if="${cvName}" th:text="'Tailored version of ' + ${cvName} + ' • Fit score ' + ${fitScore}">Tailored for the selected role.</p>
+        <p th:unless="${cvName}" th:text="'Fit score ' + ${fitScore} + ' • Ready to download'">Tailored for the selected role.</p>
     </header>
     <section class="cv-card__body">
-        <div class="cv-content" th:text="${dummyCv}">Loading tailored CV...</div>
+        <div class="insights-card">
+            <h2 class="h5 mb-3 text-secondary">Optimisation Summary</h2>
+            <p class="mb-0" th:text="${optimisationSummary}">Highlights of the improvements made.</p>
+        </div>
+        <div class="insights-card" th:if="${atsKeywords}">
+            <h2 class="h6 text-secondary text-uppercase">ATS Keywords Embedded</h2>
+            <div class="d-flex flex-wrap">
+                <span th:each="keyword : ${atsKeywords}"
+                      class="badge badge-keyword"
+                      th:text="${keyword}">Keyword</span>
+            </div>
+        </div>
+        <div class="cv-content" th:text="${upgradedCvText}">Loading tailored CV...</div>
     </section>
     <footer class="cv-card__footer">
         <a class="btn btn-outline-secondary" href="/" role="button">
             Analyze another role
         </a>
-        <a class="btn btn-primary-gradient" href="/dummy-cv/download" role="button">
+        <a class="btn btn-primary-gradient" href="/upgrade-cv/download" role="button">
             Download CV
         </a>
         <button type="button" class="btn btn-outline-light text-secondary border-secondary" onclick="window.location.href='/'">

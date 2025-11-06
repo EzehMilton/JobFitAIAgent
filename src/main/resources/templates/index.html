@@ -888,6 +888,8 @@
         if (upgradeButton) {
             upgradeButton.addEventListener('click', function(event) {
                 event.preventDefault();
+                upgradeButton.disabled = true;
+                upgradeButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparing upgraded CV…';
                 window.location.href = '/upgrade-cv';
             });
         }

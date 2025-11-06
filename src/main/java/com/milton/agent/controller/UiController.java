@@ -2,8 +2,10 @@ package com.milton.agent.controller;
 
 import com.embabel.agent.api.common.autonomy.AgentInvocation;
 import com.embabel.agent.core.AgentPlatform;
+import com.milton.agent.models.CvRewriteRequest;
 import com.milton.agent.models.FitScore;
 import com.milton.agent.models.JobFitRequest;
+import com.milton.agent.models.UpgradedCv;
 import com.milton.agent.service.RateLimitService;
 import com.milton.agent.service.TextExtractor;
 import com.milton.agent.util.FileValidationUtil;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -22,9 +25,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Slf4j
 @Controller
@@ -37,42 +42,12 @@ public class UiController {
 
     private static final String SESSION_CV_TEXT = "storedCvText";
     private static final String SESSION_CV_NAME = "storedCvName";
-    private static final String DUMMY_CV_CONTENT = """
-            JORDAN TAYLOR
-            Email: jordan.taylor@example.com | Phone: (555) 123-4567 | LinkedIn: linkedin.com/in/jordantaylor
-
-            PROFESSIONAL SUMMARY
-            Product manager with 8+ years of experience guiding cross-functional teams to deliver AI-enabled HR solutions.
-            Skilled at translating user research into product strategy, prioritising roadmaps, and launching features that
-            improve talent acquisition outcomes. Passionate about leveraging data and automation to create equitable hiring experiences.
-
-            CORE SKILLS
-            • Product Strategy & Roadmapping • Agile Delivery • Stakeholder Management
-            • UX Research & Experimentation • Data-Driven Decision Making • AI/ML for HR Tech
-
-            EXPERIENCE
-            Senior Product Manager | TalentFlow AI | 2020 - Present | San Francisco, CA
-            - Led launch of “Role Readiness” assessment that increased qualified applicant matches by 27%.
-            - Partnered with data science to deploy GPT-4 powered résumé rewriting assistant with 92% user satisfaction.
-            - Built go-to-market collateral and enablement for enterprise clients across three verticals.
-
-            Product Manager | CareerLaunch Labs | 2016 - 2020 | Remote
-            - Owned roadmap for candidate insights dashboard adopted by 1200+ recruiting teams.
-            - Implemented outcome-based OKRs and experimentation cadence that accelerated release velocity by 35%.
-            - Collaborated with design to run discovery sprints, reducing candidate drop-off by 18%.
-
-            EDUCATION
-            MBA, Strategy & Analytics | Northwestern Kellogg School of Management
-            B.S., Information Systems | University of Washington
-
-            CERTIFICATIONS
-            • Pragmatic Institute Product Management
-            • Certified Scrum Product Owner (CSPO)
-
-            ADDITIONAL HIGHLIGHTS
-            - Speaker at 2023 Talent Innovation Summit on “Personalised CV Experiences with Generative AI”.
-            - Volunteer mentor for Women In Product’s early career accelerator.
-            """;
+    private static final String SESSION_JOB_DESCRIPTION = "storedJobDescription";
+    private static final String SESSION_FIT_SCORE = "storedFitScore";
+    private static final String SESSION_FIT_EXPLANATION = "storedFitExplanation";
+    private static final String SESSION_UPGRADED_CV = "generatedUpgradedCv";
+    private static final String SESSION_UPGRADED_KEYWORDS = "generatedAtsKeywords";
+    private static final String SESSION_UPGRADED_SUMMARY = "generatedOptimisationSummary";
 
     @GetMapping({"/"})
     public String index(HttpSession session, HttpServletRequest request, Model model) {
@@ -182,6 +157,14 @@ public class UiController {
         model.addAttribute("matchClass", toMatchClass(score));
         model.addAttribute("matchTheme", toMatchTheme(score));
         model.addAttribute("showUpgradeButton", shouldShowUpgradeButton(score));
+
+        // Persist data for future CV upgrade
+        session.setAttribute(SESSION_JOB_DESCRIPTION, jobDescriptionText);
+        session.setAttribute(SESSION_FIT_SCORE, score);
+        session.setAttribute(SESSION_FIT_EXPLANATION, fitScore.explanation());
+        session.removeAttribute(SESSION_UPGRADED_CV);
+        session.removeAttribute(SESSION_UPGRADED_KEYWORDS);
+        session.removeAttribute(SESSION_UPGRADED_SUMMARY);
         model.addAttribute("storedCvName", cvFileName); // Keep showing stored CV option
 
         // Update rate limit info
@@ -196,17 +179,73 @@ public class UiController {
     }
 
     @GetMapping("/upgrade-cv")
-    public String showUpgradeCv(Model model) {
-        model.addAttribute("dummyCv", DUMMY_CV_CONTENT);
-        return "upgrade_cv";
+    public String showUpgradeCv(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        String originalCv = (String) session.getAttribute(SESSION_CV_TEXT);
+        String jobDescription = (String) session.getAttribute(SESSION_JOB_DESCRIPTION);
+        Integer fitScore = (Integer) session.getAttribute(SESSION_FIT_SCORE);
+        String fitExplanation = (String) session.getAttribute(SESSION_FIT_EXPLANATION);
+
+        if (originalCv == null || jobDescription == null || fitScore == null || fitExplanation == null) {
+            redirectAttributes.addFlashAttribute("error", "Please run an analysis before requesting an upgraded CV.");
+            return "redirect:/";
+        }
+
+        String cachedUpgradedCv = (String) session.getAttribute(SESSION_UPGRADED_CV);
+        @SuppressWarnings("unchecked")
+        List<String> cachedKeywords = (List<String>) session.getAttribute(SESSION_UPGRADED_KEYWORDS);
+        String cachedSummary = (String) session.getAttribute(SESSION_UPGRADED_SUMMARY);
+
+        if (cachedUpgradedCv != null) {
+            log.debug("Serving upgraded CV from session cache");
+            populateUpgradeModel(model, session, cachedUpgradedCv, cachedKeywords, cachedSummary, fitScore);
+            return "upgrade_cv";
+        }
+
+        try {
+            CvRewriteRequest rewriteRequest = new CvRewriteRequest(
+                    originalCv,
+                    jobDescription,
+                    fitScore,
+                    fitExplanation
+            );
+
+            var rewriteInvocation = AgentInvocation.create(agentPlatform, UpgradedCv.class);
+            UpgradedCv upgradedCv = rewriteInvocation.invoke(rewriteRequest);
+
+            String rewrittenText = (upgradedCv.cvText() == null || upgradedCv.cvText().isBlank())
+                    ? originalCv
+                    : upgradedCv.cvText();
+            List<String> keywords = upgradedCv.atsKeywords() == null ? List.of() : upgradedCv.atsKeywords();
+            String optimisationSummary = upgradedCv.optimisationSummary();
+
+            session.setAttribute(SESSION_UPGRADED_CV, rewrittenText);
+            session.setAttribute(SESSION_UPGRADED_KEYWORDS, keywords);
+            session.setAttribute(SESSION_UPGRADED_SUMMARY, optimisationSummary);
+
+            populateUpgradeModel(model, session, rewrittenText, keywords, optimisationSummary, fitScore);
+
+            return "upgrade_cv";
+        } catch (Exception ex) {
+            log.error("Failed to generate upgraded CV", ex);
+            redirectAttributes.addFlashAttribute("error", "We couldn't generate an upgraded CV right now. Please try again in a moment.");
+            return "redirect:/";
+        }
     }
 
-    @GetMapping("/dummy-cv/download")
-    public ResponseEntity<ByteArrayResource> downloadDummyCv() {
-        byte[] data = DUMMY_CV_CONTENT.getBytes(StandardCharsets.UTF_8);
+    @GetMapping("/upgrade-cv/download")
+    public ResponseEntity<ByteArrayResource> downloadUpgradedCv(HttpSession session) {
+        String upgradedCv = (String) session.getAttribute(SESSION_UPGRADED_CV);
+        if (upgradedCv == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        String originalName = (String) session.getAttribute(SESSION_CV_NAME);
+        String downloadName = buildDownloadFileName(originalName);
+
+        byte[] data = upgradedCv.getBytes(StandardCharsets.UTF_8);
         ByteArrayResource resource = new ByteArrayResource(data);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"upgrade-role-cv.txt\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadName + "\"")
                 .contentType(MediaType.TEXT_PLAIN)
                 .contentLength(data.length)
                 .body(resource);
@@ -237,10 +276,49 @@ public class UiController {
         return score >= 70 && score <= 85;
     }
 
+    private void populateUpgradeModel(Model model,
+                                      HttpSession session,
+                                      String upgradedCvText,
+                                      List<String> atsKeywords,
+                                      String optimisationSummary,
+                                      int fitScore) {
+        model.addAttribute("upgradedCvText", upgradedCvText);
+        model.addAttribute("atsKeywords", (atsKeywords == null || atsKeywords.isEmpty()) ? null : atsKeywords);
+        String summary = (optimisationSummary == null || optimisationSummary.isBlank())
+                ? "The CV was refreshed to emphasise role-aligned achievements and embed relevant ATS keywords."
+                : optimisationSummary;
+        model.addAttribute("optimisationSummary", summary);
+        model.addAttribute("cvName", session.getAttribute(SESSION_CV_NAME));
+        model.addAttribute("fitScore", fitScore);
+    }
+
+    private String buildDownloadFileName(String originalName) {
+        String baseName = (originalName == null || originalName.isBlank()) ? "upgraded-cv" : originalName;
+        baseName = baseName.replaceAll("\\s+", "-");
+        baseName = baseName.replaceAll("[^A-Za-z0-9._-]", "");
+
+        int dotIndex = baseName.lastIndexOf('.');
+        if (dotIndex > 0) {
+            baseName = baseName.substring(0, dotIndex);
+        }
+
+        if (baseName.isBlank()) {
+            baseName = "upgraded-cv";
+        }
+
+        return baseName + "-role-ready.txt";
+    }
+
     @PostMapping("/clear-cv")
     public String clearStoredCv(HttpSession session) {
         session.removeAttribute(SESSION_CV_TEXT);
         session.removeAttribute(SESSION_CV_NAME);
+        session.removeAttribute(SESSION_JOB_DESCRIPTION);
+        session.removeAttribute(SESSION_FIT_SCORE);
+        session.removeAttribute(SESSION_FIT_EXPLANATION);
+        session.removeAttribute(SESSION_UPGRADED_CV);
+        session.removeAttribute(SESSION_UPGRADED_KEYWORDS);
+        session.removeAttribute(SESSION_UPGRADED_SUMMARY);
         log.info("Cleared stored CV from session");
         return "redirect:/";
     }
