@@ -122,10 +122,7 @@ public class JobFitProviderAgent {
 
         UpgradedCv upgradedCv = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5)
-                        .withTemperature(0.3)
-                        .withTopP(0.9)
-                        .withMaxTokens(1800)
+                        .withModel(OpenAiModels.GPT_5_NANO)
                 )
                 .createObject(prompt, UpgradedCv.class);
 
