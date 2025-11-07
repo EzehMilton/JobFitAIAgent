@@ -14,6 +14,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -27,8 +32,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -242,13 +249,18 @@ public class UiController {
         String originalName = (String) session.getAttribute(SESSION_CV_NAME);
         String downloadName = buildDownloadFileName(originalName);
 
-        byte[] data = upgradedCv.getBytes(StandardCharsets.UTF_8);
-        ByteArrayResource resource = new ByteArrayResource(data);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadName + "\"")
-                .contentType(MediaType.TEXT_PLAIN)
-                .contentLength(data.length)
-                .body(resource);
+        try {
+            byte[] data = renderPdfFromText(upgradedCv);
+            ByteArrayResource resource = new ByteArrayResource(data);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadName + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .contentLength(data.length)
+                    .body(resource);
+        } catch (IOException e) {
+            log.error("Failed to create PDF for upgraded CV download", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     private String toMatchLabel(int score) {
@@ -273,7 +285,7 @@ public class UiController {
     }
 
     private boolean shouldShowUpgradeButton(int score) {
-        return score >= 70 && score <= 85;
+        return score >= 75 && score <= 85;
     }
 
     private void populateUpgradeModel(Model model,
@@ -306,7 +318,100 @@ public class UiController {
             baseName = "upgraded-cv";
         }
 
-        return baseName + "-role-ready.txt";
+        return baseName + "-role-ready.pdf";
+    }
+
+    private byte[] renderPdfFromText(String text) throws IOException {
+        try (PDDocument document = new PDDocument(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            PDType1Font font = PDType1Font.HELVETICA;
+            float fontSize = 11f;
+            float leading = 1.4f * fontSize;
+            float margin = 50f;
+            float availableWidth = PDRectangle.LETTER.getWidth() - (margin * 2);
+            String sanitizedText = sanitizeForPdf(text);
+            List<String> lines = wrapText(sanitizedText, font, fontSize, availableWidth);
+
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            document.addPage(page);
+            PDPageContentStream contentStream = new PDPageContentStream(document, page);
+
+            float yPosition = page.getMediaBox().getHeight() - margin;
+            contentStream.beginText();
+            contentStream.setFont(font, fontSize);
+            contentStream.newLineAtOffset(margin, yPosition);
+
+            for (String line : lines) {
+                if (yPosition <= margin) {
+                    contentStream.endText();
+                    contentStream.close();
+
+                    page = new PDPage(PDRectangle.LETTER);
+                    document.addPage(page);
+                    contentStream = new PDPageContentStream(document, page);
+
+                    yPosition = page.getMediaBox().getHeight() - margin;
+                    contentStream.beginText();
+                    contentStream.setFont(font, fontSize);
+                    contentStream.newLineAtOffset(margin, yPosition);
+                }
+
+                String printableLine = line == null ? "" : line;
+                contentStream.showText(printableLine);
+                contentStream.newLineAtOffset(0, -leading);
+                yPosition -= leading;
+            }
+
+            contentStream.endText();
+            contentStream.close();
+
+            document.save(outputStream);
+            return outputStream.toByteArray();
+        }
+    }
+
+    private List<String> wrapText(String text, PDType1Font font, float fontSize, float availableWidth) throws IOException {
+        List<String> wrappedLines = new ArrayList<>();
+        String[] rawLines = text.split("\\R", -1);
+
+        for (String rawLine : rawLines) {
+            if (rawLine.isBlank()) {
+                wrappedLines.add("");
+                continue;
+            }
+
+            String[] words = rawLine.split("\\s+");
+            StringBuilder currentLine = new StringBuilder();
+
+            for (String word : words) {
+                String candidate = currentLine.length() == 0 ? word : currentLine + " " + word;
+                float candidateWidth = font.getStringWidth(candidate) / 1000 * fontSize;
+
+                if (candidateWidth > availableWidth && currentLine.length() > 0) {
+                    wrappedLines.add(currentLine.toString());
+                    currentLine = new StringBuilder(word);
+                } else {
+                    currentLine = new StringBuilder(candidate);
+                }
+            }
+
+            wrappedLines.add(currentLine.toString());
+        }
+
+        return wrappedLines;
+    }
+
+    private String sanitizeForPdf(String text) {
+        if (text == null) {
+            return "";
+        }
+        String normalized = Normalizer.normalize(text, Normalizer.Form.NFKD)
+                .replaceAll("\\p{M}", "");
+        normalized = normalized
+                .replace('\u2022', '-')
+                .replace('\u2023', '-')
+                .replace('\u25CF', '-');
+
+        return normalized.replaceAll("[^\\x09\\x0A\\x0D\\x20-\\x7E]", "");
     }
 
     @PostMapping("/clear-cv")
