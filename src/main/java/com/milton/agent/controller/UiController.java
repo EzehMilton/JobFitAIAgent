@@ -285,7 +285,7 @@ public class UiController {
     }
 
     private boolean shouldShowUpgradeButton(int score) {
-        return score >= 70 && score <= 85;
+        return score >= 75 && score <= 85;
     }
 
     private void populateUpgradeModel(Model model,
