@@ -81,6 +81,7 @@ public class UiController {
     public String generateScore(@RequestParam(value = "candidateFile", required = false) MultipartFile cv,
                                 @RequestParam(value = "reuseCv", required = false) Boolean reuseCv,
                                 @RequestParam("jobDescription") String jobDescription,
+                                @RequestParam(value = "analysisMode", required = false) String analysisMode,
                                 HttpServletRequest request,
                                 HttpSession session,
                                 Model model) throws IOException {
@@ -152,7 +153,10 @@ public class UiController {
 
         var jobDescriptionText = jobDescription.trim();
 
-        JobFitRequest jobFitRequest = new JobFitRequest(candidateCvText, jobDescriptionText);
+        String normalizedMode = analysisMode == null ? "" : analysisMode.trim();
+        boolean quickResponseRequested = !"thoughtful".equalsIgnoreCase(normalizedMode);
+
+        JobFitRequest jobFitRequest = new JobFitRequest(candidateCvText, jobDescriptionText, quickResponseRequested);
         var fitScoreAgentInvocation = AgentInvocation.create(agentPlatform, FitScore.class);
         FitScore fitScore = fitScoreAgentInvocation.invoke(jobFitRequest);
 

@@ -27,7 +27,8 @@ public class JobFitProviderController {
 
     @PostMapping("/score")
     FitScore extractSkillsFromCVAndJobDescription(@RequestParam("candidateFile") MultipartFile cv,
-                                                  @RequestParam("jobDescriptionFile") MultipartFile jobDescription) throws IOException {
+                                                  @RequestParam("jobDescriptionFile") MultipartFile jobDescription,
+                                                  @RequestParam(value = "analysisMode", required = false, defaultValue = "quick") String analysisMode) throws IOException {
 
 
         if (!FileValidationUtil.isPdfFile(cv)) {
@@ -42,7 +43,8 @@ public class JobFitProviderController {
         var candidateCvText = textExtractor.extractText(cv);
         var jobDescriptionText = textExtractor.extractText(jobDescription);
         log.debug("Text extracted from documents.");
-        JobFitRequest request = new JobFitRequest(candidateCvText, jobDescriptionText);
+        boolean quickResponseRequested = !"thoughtful".equalsIgnoreCase(analysisMode);
+        JobFitRequest request = new JobFitRequest(candidateCvText, jobDescriptionText, quickResponseRequested);
         var fitScoreAgentInvocation = AgentInvocation.create(agentPlatform, FitScore.class);
         var fitScore = fitScoreAgentInvocation.invoke(request);
         log.info("Fit score of your application: {}", fitScore);
