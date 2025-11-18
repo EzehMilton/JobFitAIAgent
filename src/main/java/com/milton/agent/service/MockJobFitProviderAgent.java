@@ -48,7 +48,7 @@ public class MockJobFitProviderAgent {
 
     @AchievesGoal(description = "Mocked fit score computation for dev mode")
     @Action
-    public FitScore calculateFitScore(CvSkills cvSkills, JobRequirements jobRequirements, OperationContext context) {
+    public FitScore calculateFitScore(JobFitRequest request, CvSkills cvSkills, JobRequirements jobRequirements, OperationContext context) {
         log.info("[DEV MOCK] Returning mock fit score");
         return new FitScore(
                 78,

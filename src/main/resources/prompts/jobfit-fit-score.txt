@@ -161,6 +161,21 @@ TONE REQUIREMENTS:
 ✗ Don't use vague phrases like "with some training" without specifics
 ✗ Don't be artificially encouraging when fit is genuinely poor
 
+GRAMMAR & STYLE REQUIREMENTS:
+• All sentences must be complete and grammatically correct.
+• Do not use run-on sentences.
+• Avoid parentheses inside sentences; express ideas in full sentences instead.
+• Do not break sentences across multiple lines.
+• Use clear connectors such as “However”, “In addition”, “Furthermore”, “As a result”.
+• Do not start sentences with vague adverbs like “Also”, “Additionally” unless necessary.
+• Every sentence must have a clear subject and verb.
+• Avoid filler phrases such as “which may limit your ability” or “solid experience”.
+• Avoid vague claims such as “strong communication skills” unless explicitly supported by the candidate’s skills.
+• Ensure pronouns refer clearly to the correct subject (avoid ambiguity).
+• Avoid disjointed clauses — rewrite them into two clear sentences instead of one long one.
+• Do not interrupt sentences with clarifications; rewrite them as separate sentences.
+• The final paragraph must read smoothly with no abrupt transitions.
+
 ═══════════════════════════════════════════════════════════════════════
 OUTPUT FORMAT:
 ═══════════════════════════════════════════════════════════════════════

@@ -87,7 +87,7 @@ public class JobFitProviderAgent {
 
     @AchievesGoal(description = "Computes the fit score between CV and job description")
     @Action
-    public FitScore calculateFitScore(CvSkills cvSkills, JobRequirements jobRequirements, OperationContext context) {
+    public FitScore calculateFitScore(JobFitRequest request, CvSkills cvSkills, JobRequirements jobRequirements, OperationContext context) {
         log.info("Calculating fit score for CV skills and job requirements");
 
         String promptTemplate = promptLoader.loadPrompt("jobfit-fit-score.txt");
@@ -97,10 +97,12 @@ public class JobFitProviderAgent {
         );
         log.debug("Final Prompt: {}", finalPrompt);
 
+        boolean quickResponseRequested = request != null && request.QuickResponse();
+        var llmOptions = LlmOptions
+                .withModel(quickResponseRequested ? OpenAiModels.GPT_41_MINI : OpenAiModels.GPT_5);
+
         FitScore fitScore = context.ai()
-                .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5)
-                )
+                .withLlm(llmOptions)
                 .createObject(finalPrompt, FitScore.class);
 
         Assert.notNull(fitScore, "Fit score cannot be null");
