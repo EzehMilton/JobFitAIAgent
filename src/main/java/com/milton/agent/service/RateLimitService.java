@@ -10,14 +10,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service to track and limit requests per IP address.
- * Limits each IP to 5 requests per calendar day.
+ * Limits each IP to 10 requests per calendar day.
  * Resets at midnight daily.
  */
 @Slf4j
 @Service
 public class RateLimitService {
 
-    private static final int MAX_REQUESTS_PER_DAY = 5;
+    private static final int MAX_REQUESTS_PER_DAY = 10;
 
     // Map: IP address -> Daily request info
     private final Map<String, DailyRequestInfo> ipRequestMap = new ConcurrentHashMap<>();
@@ -55,7 +55,7 @@ public class RateLimitService {
      * Get remaining requests for an IP address for today.
      *
      * @param ipAddress The IP address
-     * @return Number of remaining requests (0-3)
+     * @return Number of remaining requests (0-10)
      */
     public int getRemainingRequests(String ipAddress) {
         LocalDate today = LocalDate.now();

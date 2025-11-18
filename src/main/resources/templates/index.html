@@ -744,15 +744,13 @@
                             <i class="fas fa-chart-bar me-2"></i>
                             <span class="rate-limit-text">
                   <strong>Beta Version (Free):</strong>
-                  <span th:text="${remainingRequests}">5</span> of 5 scans available today.
+                  <span th:text="${remainingRequests}">10</span> of 10 scans available today.
                 </span>
                         </div>
                         <div class="rate-limit-dots">
-                            <span class="rate-dot" th:classappend="${usedRequests >= 1 ? 'used' : ''}"></span>
-                            <span class="rate-dot" th:classappend="${usedRequests >= 2 ? 'used' : ''}"></span>
-                            <span class="rate-dot" th:classappend="${usedRequests >= 3 ? 'used' : ''}"></span>
-                            <span class="rate-dot" th:classappend="${usedRequests >= 4 ? 'used' : ''}"></span>
-                            <span class="rate-dot" th:classappend="${usedRequests >= 5 ? 'used' : ''}"></span>
+                            <span class="rate-dot"
+                                  th:each="i : ${#numbers.sequence(1, 10)}"
+                                  th:classappend="${usedRequests >= i ? 'used' : ''}"></span>
                         </div>
                     </div>
 

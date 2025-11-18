@@ -1,157 +1,145 @@
 Job Fit Agent
+=============
 
-A Spring Boot web application that uses Embabel Agents (LLM orchestration) to analyze how well a candidate's CV matches a job description. It features both a responsive web interface and REST API endpoints for CV-to-job matching with AI-powered insights.
+Job Fit Agent is a Spring Boot application that compares a candidate’s CV with a target job description and produces an AI-generated fit score, narrative explanation, and optional upgraded CV. It uses Embabel’s agent framework to orchestrate multiple OpenAI models and exposes both a rich web UI and a REST endpoint.
 
-Key technologies
-- Java 21 (Spring Boot 3.5.6)
-- Embabel Agent Starter (LLM agent framework)
-- OpenAI GPT models (gpt-4o-mini, gpt-5)
-- Thymeleaf (web UI templating)
-- Apache PDFBox (PDF text extraction)
-- Bootstrap 5 (responsive UI)
-- Maven
+Key Capabilities
+---------------
+- **Job fit scoring** – Extracts skills from the CV and requirements from the job description, then runs a scoring prompt that returns a 0–100 score plus a human-readable explanation.
+- **Response mode control** – Users can request a quick score (GPT‑5‑nano) or a more thoughtful score (GPT‑5). Quick mode is the default checkbox selection.
+- **CV session reuse** – Uploaded CVs are stored in the session so users can run multiple analyses without uploading again and can clear the cached file at any time.
+- **Upgrade my CV flow** – When the score is in the “almost there” band (75–85) users can request a rewritten CV that highlights ATS keywords, view a breakdown page, and download a PDF generated via Apache PDFBox.
+- **Daily rate limiting** – Every IP receives 10 free scans per day. The UI surfaces remaining scans, and the backend enforces the limit.
+- **REST access** – Programmatic clients can call `/score` with PDF files to obtain the same JSON response used by the UI.
 
-Features
-- Modern responsive web interface with drag-and-drop PDF upload
-- CV session storage for reuse across multiple job analyses
-- Rate limiting (5 free analyses per IP per day)
-- PDF text extraction from CV and job description files
-- AI-powered skill extraction and job requirement analysis
-- 0–100 fit score with detailed explanation
-- REST API endpoints for programmatic access
-- Real-time progress tracking during analysis
+Architecture Overview
+---------------------
+The app is split into three layers:
+1. **Controllers** – `UiController` powers the Thymeleaf pages and AJAX submission, while `JobFitProviderController` exposes the REST `/score` endpoint.
+2. **Agents** – `JobFitProviderAgent` (prod profile) and `MockJobFitProviderAgent` (dev profile) define the Embabel agent actions for extracting CV skills, extracting job requirements, computing the fit score, and rewriting CVs.
+3. **Services & Utilities** – `RateLimitService`, `TextExtractor` (PDF text extraction), and helper utilities manage IP limits, file validation, IP lookup, etc.
 
-Project layout
-- src/main/java/com/milton/agent/JobFitAgentApplication.java – Spring Boot app entry point
-- src/main/java/com/milton/agent/controller/UiController.java – Web interface controller
-- src/main/java/com/milton/agent/controller/JobFitProviderController.java – REST API controller
-- src/main/java/com/milton/agent/service/JobFitProviderAgent.java – AI agent for CV/job analysis
-- src/main/java/com/milton/agent/service/RateLimitService.java – IP-based rate limiting
-- src/main/java/com/milton/agent/service/PDFTextExtratorImpl.java – PDF text extraction
-- src/main/java/com/milton/agent/models – Data models and records
-- src/main/resources/templates/index.html – Responsive web interface
-- src/main/resources/prompts/ – AI prompts for extraction and scoring
-- src/main/resources/application.properties – Configuration
-- pom.xml – Maven dependencies and build configuration
+Requirements
+------------
+- JDK 21+
+- Maven or the provided Maven Wrapper (`mvnw` / `mvnw.cmd`)
+- OpenAI API key with access to gpt‑5 / gpt‑5‑nano (set `OPENAI_API_KEY`)
 
-Prerequisites
-- Java Development Kit (JDK) 21 or newer
-- Maven (wrapper included: mvnw/mvnw.cmd), or compatible IDE
-- OpenAI API key for LLM access
+Getting Started
+---------------
+1. **Clone the repo** and move into the directory.
+2. **Configure credentials**:
+   ```bash
+   export OPENAI_API_KEY=sk-your-key
+   # Optional: switch to dev profile to use the mock agent
+   export SPRING_PROFILES_ACTIVE=prod   # or dev
+   ```
+3. **Run the app**:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+4. **Open the UI** at [http://localhost:8080](http://localhost:8080) and upload a CV (PDF) plus a job description.
 
-Configuration
-The application reads settings from src/main/resources/application.properties:
+Configuration Highlights
+------------------------
+Settings live in `src/main/resources/application.properties`. Key entries:
 
-```properties
-# Embabel AI Configuration
-embabel.ai.default-llm=openai
-embabel.ai.openai.api-key=${OPENAI_API_KEY}
-embabel.ai.openai.model=gpt-4o-mini
-embabel.ai.openai.base-url=https://api.openai.com/v1
-embabel.ai.openai.timeout=60s
-embabel.ai.openai.temperature=0.2
-embabel.ai.openai.max-tokens=1024
+| Property | Description |
+| --- | --- |
+| `embabel.ai.openai.api-key` | Inherits from `OPENAI_API_KEY`; required for prod profile. |
+| `embabel.ai.openai.model` | Default fallback model (scoring agent overrides with GPT‑5 or GPT‑5‑nano). |
+| `spring.servlet.multipart.max-file-size` | PDF upload limit (default 10MB). |
+| `spring.profiles.active` | Use `dev` for mock responses (no OpenAI calls) or `prod` for live scoring. |
 
-# File Upload Limits
-spring.servlet.multipart.max-file-size=10MB
-spring.servlet.multipart.max-request-size=10MB
-```
+Response Modes
+--------------
+- **Quick score** – Default checkbox in the UI. Sends `analysisMode=quick` and forces the scoring step to GPT‑5‑nano for fast turnaround.
+- **Thoughtful score** – Users can select the second checkbox. Sends `analysisMode=thoughtful`, which switches the scoring agent to GPT‑5 for deeper reasoning (slower response, more detailed narratives).
 
-Set your OpenAI API key as an environment variable:
-- macOS/Linux: `export OPENAI_API_KEY=sk-...`
-- Windows: `$Env:OPENAI_API_KEY="sk-..."`
+Using the Web UI
+----------------
+1. Upload a PDF CV or reuse the cached CV if you already uploaded one earlier.
+2. Paste the job description.
+3. Choose **Quick score** or **Thoughtful score** above the “Generate Score” button.
+4. Submit the form. A loading overlay appears while the AJAX call runs against `/generate`.
+5. Review the score, explanation, and CV metadata in the result overlay.
+6. If your score is between 75 and 85, click **Upgrade CV** to open the rewrite page, then download the generated PDF.
 
-Build and run
-Using Maven Wrapper:
+Rate Limiting
+-------------
+- `RateLimitService` enforces **10 scans per IP per day**.
+- The UI banner displays remaining scans using 10 indicator dots.
+- Once the quota is exhausted the user sees a friendly error and must wait for the daily reset (map resets at midnight + scheduled cleanup).
+
+REST API
+--------
+Endpoint: `POST /score`
+
+Form parameters:
+- `candidateFile` – Candidate CV PDF (required)
+- `jobDescriptionFile` – Job description PDF (required)
+- `analysisMode` – Optional (`quick` default, `thoughtful` for GPT‑5)
+
+Sample request:
 ```bash
-# macOS/Linux
-./mvnw spring-boot:run
-
-# Windows
-mvnw.cmd spring-boot:run
+curl -X POST http://localhost:8080/score \
+  -F candidateFile=@cv.pdf \
+  -F jobDescriptionFile=@job.pdf \
+  -F analysisMode=thoughtful
 ```
 
-Alternatively, build and run as JAR:
-```bash
-./mvnw clean package
-java -jar target/agent-0.0.1-SNAPSHOT.jar
-```
-
-Usage
-
-Web Interface
-1. Navigate to http://localhost:8080
-2. Upload your CV (PDF format, max 10MB)
-3. Paste the job description text
-4. Click "Generate Score" to analyze
-5. View detailed results with score and explanation
-6. Optionally reuse your CV for analyzing multiple jobs
-
-REST API Endpoints
-
-**PDF Upload Endpoint**
-- `POST /score`
-- Content-Type: `multipart/form-data`
-- Parameters:
-  - `candidateFile`: PDF file containing CV
-  - `jobDescriptionFile`: PDF file containing job description
-
-**Web Form Endpoint**
-- `POST /generate`
-- Content-Type: `multipart/form-data`
-- Parameters:
-  - `candidateFile`: PDF file (optional if reusing)
-  - `reuseCv`: boolean to reuse stored CV
-  - `jobDescription`: text content of job description
-
-Response format (FitScore):
+Sample response:
 ```json
 {
-  "score": 85,
-  "explanation": "Strong alignment in Java and Spring Boot expertise. Your 5+ years of REST API development directly matches their requirements..."
+  "score": 82,
+  "explanation": "Strong alignment on product execution ... gaps in cloud security experience."
 }
 ```
 
-Rate Limiting
-- Free tier: 5 analyses per IP address per day
-- Resets at midnight UTC
-- Session CV storage allows multiple job comparisons without re-upload
-
-Testing
-Run unit tests:
-```bash
-./mvnw test
+Project Structure
+-----------------
+```
+src/main/java/com/milton/agent/
+├── controller/
+│   ├── UiController.java              # Web routes (/generate, /upgrade-cv, /clear-cv)
+│   └── JobFitProviderController.java  # REST /score endpoint
+├── service/
+│   ├── JobFitProviderAgent.java       # Production Embabel agent
+│   ├── MockJobFitProviderAgent.java   # Dev agent with hard-coded responses
+│   ├── RateLimitService.java          # 10 scans/day rate limiter
+│   └── TextExtractor.java             # PDF text extraction abstraction
+├── models/                            # Records such as FitScore, JobFitRequest, etc.
+└── config/prompts/                    # Prompt templates used by each agent action
 ```
 
+Development Notes
+-----------------
+- **Profiles**: Run with `SPRING_PROFILES_ACTIVE=dev` to bypass OpenAI calls while building UI flows; the mock agent returns static data.
+- **Prompts**: `src/main/resources/prompts/` contains `skills-extractor.txt`, `job-description-extractor.txt`, `jobfit-fit-score.txt`, and `cv-rewriter.txt`. Modify these when you want to tweak model behavior.
+- **Upgrade PDFs**: The PDF download is rendered on the fly using PDFBox, stripping non-ASCII characters for compatibility.
+- **Cleaning sessions**: `/clear-cv` POST removes cached CV data from the session.
+
+Testing & Packaging
+-------------------
+- Run tests: `./mvnw test`
+- Build jar: `./mvnw clean package`
+- The generated artifact lives in `target/` (default `agent-0.0.1-SNAPSHOT.jar`).
+
 Troubleshooting
-- **401/403 from OpenAI**: Verify OPENAI_API_KEY is set correctly
-- **File upload errors**: Ensure PDF files are under 10MB
-- **Timeout errors**: Increase `embabel.ai.openai.timeout` value
-- **Rate limit exceeded**: Wait until midnight or clear browser session
-- **Build failures**: Ensure Java 21+ is installed and JAVA_HOME is set
-- **PDF processing errors**: Verify uploaded files are valid PDF format
-
-Extending the application
-- **Modify scoring logic**: Update `JobFitProviderAgent.calculateFitScore()`
-- **Customize extraction prompts**: Edit files in `src/main/resources/prompts/`
-- **Adjust rate limits**: Modify `MAX_REQUESTS_PER_DAY` in `RateLimitService`
-- **Add authentication**: Implement Spring Security filters
-- **Support other file formats**: Extend `TextExtractor` interface
-
-AI Model Configuration
-The application uses different models for different tasks:
-- Skills extraction: GPT-4o-mini (faster, cost-effective)
-- Job requirements: GPT-4o-mini  
-- Final scoring: GPT-5 (higher quality analysis)
+---------------
+- **Missing Java runtime**: Ensure JDK 21+ is installed; `java -version` should report the correct version.
+- **OpenAI authentication**: 401 errors usually mean the `OPENAI_API_KEY` env var is missing or invalid.
+- **Rate limit hit immediately**: Clear the in-memory counter by restarting the app or calling `RateLimitService.resetIp(...)` from a REPL/test.
+- **File validation errors**: The controllers enforce PDF uploads; any other MIME type triggers a validation message.
 
 License
-No license specified. Add a LICENSE file if distributing.
+-------
+All rights reserved. This software is provided under a commercial End User License Agreement (EULA).  
 
-Contact
-Created by Chikere Ezeh - chikere@gmail.com
+Key terms:
+- A paid license is required for any production, hosted, or client-facing use.
+- Redistribution, sublicensing, or code modification for resale is prohibited.
+- Evaluation or internal prototyping is permitted only after obtaining written approval.
+- You must keep Embabel/API keys confidential and comply with all third-party model terms.
 
-Acknowledgements
-- Embabel Agent Starter for LLM orchestration
-- Spring Boot for the web framework
-- Apache PDFBox for PDF processing
-- Bootstrap for responsive UI design
+To obtain a commercial license or discuss partnership terms, contact **Chikere Ezeh – chikere@gmail.com**. Use of this repository without a signed agreement is strictly forbidden.

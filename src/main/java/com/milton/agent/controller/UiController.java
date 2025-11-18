@@ -72,7 +72,7 @@ public class UiController {
         model.addAttribute("remainingRequests", remainingRequests);
         model.addAttribute("usedRequests", usedRequests);
 
-        log.debug("IP {} - Used: {}/5, Remaining: {}", ipAddress, usedRequests, remainingRequests);
+        log.debug("IP {} - Used: {}/10, Remaining: {}", ipAddress, usedRequests, remainingRequests);
 
         return "index";
     }
@@ -93,7 +93,7 @@ public class UiController {
         // Check rate limit
         if (!rateLimitService.isAllowed(ipAddress)) {
             int usedRequests = rateLimitService.getRequestCount(ipAddress);
-            model.addAttribute("error", "Rate limit exceeded. You have used all 5 free analyses. Please try again tomorrow.");
+            model.addAttribute("error", "Rate limit exceeded. You have used all 10 free analyses. Please try again tomorrow.");
             model.addAttribute("rateLimitExceeded", true);
             model.addAttribute("usedRequests", usedRequests);
             model.addAttribute("remainingRequests", 0);
