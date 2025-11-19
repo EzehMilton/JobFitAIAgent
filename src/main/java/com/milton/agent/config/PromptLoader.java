@@ -1,5 +1,6 @@
 package com.milton.agent.config;
 
+import com.milton.agent.exceptions.PromptLoaderException;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,7 @@ public class PromptLoader {
         try (InputStream inputStream = new ClassPathResource(path).getInputStream()) {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load prompt: " + path, e);
+            throw new PromptLoaderException("Failed to load prompt: " + path, e);
         }
     }
 }
