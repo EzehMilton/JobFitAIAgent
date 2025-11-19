@@ -17,7 +17,7 @@ class RateLimitServiceTest {
 
     @BeforeEach
     void setUp() {
-        rateLimitService = new RateLimitService();
+        rateLimitService = new RateLimitService(10);
     }
 
     @Test

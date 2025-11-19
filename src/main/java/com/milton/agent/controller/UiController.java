@@ -12,13 +12,13 @@ import com.milton.agent.util.FileValidationUtil;
 import com.milton.agent.util.IpAddressUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,12 +41,14 @@ import java.util.List;
 
 @Slf4j
 @Controller
-@RequiredArgsConstructor
 public class UiController {
 
     private final AgentPlatform agentPlatform;
     private final TextExtractor textExtractor;
     private final RateLimitService rateLimitService;
+
+    private final int upgradeScoreLowerBound;
+    private final int upgradeScoreUpperBound;
 
     private static final String SESSION_CV_TEXT = "storedCvText";
     private static final String SESSION_CV_NAME = "storedCvName";
@@ -55,6 +58,20 @@ public class UiController {
     private static final String SESSION_UPGRADED_CV = "generatedUpgradedCv";
     private static final String SESSION_UPGRADED_KEYWORDS = "generatedAtsKeywords";
     private static final String SESSION_UPGRADED_SUMMARY = "generatedOptimisationSummary";
+
+    public UiController(AgentPlatform agentPlatform,
+                        TextExtractor textExtractor,
+                        RateLimitService rateLimitService,
+                        @Value("${jobfit.upgrade-button.lower-score:75}") int upgradeScoreLowerBound,
+                        @Value("${jobfit.upgrade-button.upper-score:85}") int upgradeScoreUpperBound) {
+        Assert.isTrue(upgradeScoreLowerBound < upgradeScoreUpperBound,
+                "Upgrade score lower bound must be less than upper bound");
+        this.agentPlatform = agentPlatform;
+        this.textExtractor = textExtractor;
+        this.rateLimitService = rateLimitService;
+        this.upgradeScoreLowerBound = upgradeScoreLowerBound;
+        this.upgradeScoreUpperBound = upgradeScoreUpperBound;
+    }
 
     @GetMapping({"/"})
     public String index(HttpSession session, HttpServletRequest request, Model model) {
@@ -68,11 +85,13 @@ public class UiController {
         String ipAddress = IpAddressUtil.getClientIpAddress(request);
         int remainingRequests = rateLimitService.getRemainingRequests(ipAddress);
         int usedRequests = rateLimitService.getRequestCount(ipAddress);
+        int maxDailyScans = rateLimitService.getMaxRequestsPerDay();
 
         model.addAttribute("remainingRequests", remainingRequests);
         model.addAttribute("usedRequests", usedRequests);
+        model.addAttribute("maxDailyScans", maxDailyScans);
 
-        log.debug("IP {} - Used: {}/10, Remaining: {}", ipAddress, usedRequests, remainingRequests);
+        log.debug("IP {} - Used: {}/{}, Remaining: {}", ipAddress, usedRequests, maxDailyScans, remainingRequests);
 
         return "index";
     }
@@ -89,14 +108,17 @@ public class UiController {
         // Get client IP address
         String ipAddress = IpAddressUtil.getClientIpAddress(request);
         log.info("Request from IP: {}", ipAddress);
+        model.addAttribute("maxDailyScans", rateLimitService.getMaxRequestsPerDay());
 
         // Check rate limit
         if (!rateLimitService.isAllowed(ipAddress)) {
             int usedRequests = rateLimitService.getRequestCount(ipAddress);
-            model.addAttribute("error", "Rate limit exceeded. You have used all 10 free analyses. Please try again tomorrow.");
+            int maxDailyScans = rateLimitService.getMaxRequestsPerDay();
+            model.addAttribute("error", "Rate limit exceeded. You have used all " + maxDailyScans + " free analyses. Please try again tomorrow.");
             model.addAttribute("rateLimitExceeded", true);
             model.addAttribute("usedRequests", usedRequests);
             model.addAttribute("remainingRequests", 0);
+            model.addAttribute("maxDailyScans", maxDailyScans);
 
             // Preserve stored CV info if available
             String storedCvName = (String) session.getAttribute(SESSION_CV_NAME);
@@ -183,6 +205,7 @@ public class UiController {
         int usedRequests = rateLimitService.getRequestCount(ipAddress);
         model.addAttribute("remainingRequests", remainingRequests);
         model.addAttribute("usedRequests", usedRequests);
+        model.addAttribute("maxDailyScans", rateLimitService.getMaxRequestsPerDay());
 
         log.info("Analysis complete for IP: {}. Remaining requests: {}", ipAddress, remainingRequests);
 
@@ -289,7 +312,11 @@ public class UiController {
     }
 
     private boolean shouldShowUpgradeButton(int score) {
-        return score >= 75 && score <= 85;
+        if (upgradeScoreLowerBound >= upgradeScoreUpperBound) {
+            log.warn("Invalid upgrade score bounds configured: lower={} upper={}", upgradeScoreLowerBound, upgradeScoreUpperBound);
+            return false;
+        }
+        return score >= upgradeScoreLowerBound && score <= upgradeScoreUpperBound;
     }
 
     private void populateUpgradeModel(Model model,

@@ -744,12 +744,13 @@
                             <i class="fas fa-chart-bar me-2"></i>
                             <span class="rate-limit-text">
                   <strong>Beta Version (Free):</strong>
-                  <span th:text="${remainingRequests}">10</span> of 10 scans available today.
+                  <span th:text="${remainingRequests}">10</span> of
+                  <span th:text="${maxDailyScans}">10</span> scan(s) available today.
                 </span>
                         </div>
-                        <div class="rate-limit-dots">
+                        <div class="rate-limit-dots" th:if="${maxDailyScans != null}">
                             <span class="rate-dot"
-                                  th:each="i : ${#numbers.sequence(1, 10)}"
+                                  th:each="i : ${#numbers.sequence(1, maxDailyScans)}"
                                   th:classappend="${usedRequests >= i ? 'used' : ''}"></span>
                         </div>
                     </div>
@@ -820,14 +821,14 @@
                                 <input class="form-check-input" type="checkbox" id="quickResponse" name="analysisMode" value="quick" checked>
                                 <label class="form-check-label" for="quickResponse">
                                     <span class="option-heading">Quick Score (default)</span>
-                                    <span class="option-detail">Faster, lightweight analysis ideal for quick match checks.</span>
+                                    <span class="option-detail">Faster, lightweight analysis ideal for quick match checks (Approx 1 min).</span>
                                 </label>
                             </div>
                             <div class="response-option form-check">
                                 <input class="form-check-input" type="checkbox" id="thoughtfulResponse" name="analysisMode" value="thoughtful">
                                 <label class="form-check-label" for="thoughtfulResponse">
                                     <span class="option-heading">Deep Score</span>
-                                    <span class="option-detail">Slower in processing, richer in detail, and higher in accuracy.</span>
+                                    <span class="option-detail">Slower in processing, richer in detail, and higher in accuracy (Approx 2-3 mins).</span>
                                 </label>
                             </div>
                         </div>
