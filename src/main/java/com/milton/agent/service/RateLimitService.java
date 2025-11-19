@@ -1,6 +1,7 @@
 package com.milton.agent.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -10,17 +11,21 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service to track and limit requests per IP address.
- * Limits each IP to 10 requests per calendar day.
+ * Limits each IP to a configurable number of requests per calendar day.
  * Resets at midnight daily.
  */
 @Slf4j
 @Service
 public class RateLimitService {
 
-    private static final int MAX_REQUESTS_PER_DAY = 10;
+    private final int maxRequestsPerDay;
 
     // Map: IP address -> Daily request info
     private final Map<String, DailyRequestInfo> ipRequestMap = new ConcurrentHashMap<>();
+
+    public RateLimitService(@Value("${jobfit.rate-limit.max-daily-scans:10}") int maxRequestsPerDay) {
+        this.maxRequestsPerDay = maxRequestsPerDay;
+    }
 
     /**
      * Check if an IP address has exceeded the daily rate limit.
@@ -40,13 +45,13 @@ public class RateLimitService {
                 info.requestCount = 0;
             }
 
-            if (info.requestCount >= MAX_REQUESTS_PER_DAY) {
+            if (info.requestCount >= maxRequestsPerDay) {
                 log.warn("Daily rate limit exceeded for IP: {} (Date: {})", ipAddress, today);
                 return false;
             }
 
             info.requestCount++;
-            log.info("Request count for IP {} on {}: {}/{}", ipAddress, today, info.requestCount, MAX_REQUESTS_PER_DAY);
+            log.info("Request count for IP {} on {}: {}/{}", ipAddress, today, info.requestCount, maxRequestsPerDay);
             return true;
         }
     }
@@ -55,17 +60,17 @@ public class RateLimitService {
      * Get remaining requests for an IP address for today.
      *
      * @param ipAddress The IP address
-     * @return Number of remaining requests (0-10)
+     * @return Number of remaining requests (0-maxRequestsPerDay)
      */
     public int getRemainingRequests(String ipAddress) {
         LocalDate today = LocalDate.now();
         DailyRequestInfo info = ipRequestMap.get(ipAddress);
 
         if (info == null || !info.date.equals(today)) {
-            return MAX_REQUESTS_PER_DAY;
+            return maxRequestsPerDay;
         }
 
-        return Math.max(0, MAX_REQUESTS_PER_DAY - info.requestCount);
+        return Math.max(0, maxRequestsPerDay - info.requestCount);
     }
 
     /**
@@ -124,6 +129,10 @@ public class RateLimitService {
      */
     public int getTrackedIpCount() {
         return ipRequestMap.size();
+    }
+
+    public int getMaxRequestsPerDay() {
+        return maxRequestsPerDay;
     }
 
     /**

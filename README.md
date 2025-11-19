@@ -49,6 +49,9 @@ Settings live in `src/main/resources/application.properties`. Key entries:
 | `embabel.ai.openai.api-key` | Inherits from `OPENAI_API_KEY`; required for prod profile. |
 | `embabel.ai.openai.model` | Default fallback model (scoring agent overrides with GPT‑5 or GPT‑5‑nano). |
 | `spring.servlet.multipart.max-file-size` | PDF upload limit (default 10MB). |
+| `jobfit.rate-limit.max-daily-scans` | Number of free scans per IP per day (default 10). |
+| `jobfit.upgrade-button.lower-score` | Minimum score that triggers the “Upgrade CV” CTA (default 75). |
+| `jobfit.upgrade-button.upper-score` | Maximum score that still shows the CTA (default 85). |
 | `spring.profiles.active` | Use `dev` for mock responses (no OpenAI calls) or `prod` for live scoring. |
 
 Response Modes
@@ -70,6 +73,13 @@ Rate Limiting
 - `RateLimitService` enforces **10 scans per IP per day**.
 - The UI banner displays remaining scans using 10 indicator dots.
 - Once the quota is exhausted the user sees a friendly error and must wait for the daily reset (map resets at midnight + scheduled cleanup).
+- Change the quota via `jobfit.rate-limit.max-daily-scans` in `application.properties` (takes effect on restart).
+
+Upgrade Button Thresholds
+-------------------------
+- The “Upgrade CV” call-to-action only appears when the score lands between `jobfit.upgrade-button.lower-score` and `jobfit.upgrade-button.upper-score`.
+- Defaults are 75–85, but you can raise/lower either value in `application.properties` to widen or narrow the band.
+- The application validates that the lower bound is strictly less than the upper bound during startup and will skip showing the button if the configuration is invalid.
 
 REST API
 --------
