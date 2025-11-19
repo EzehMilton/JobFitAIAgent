@@ -36,10 +36,10 @@ public class JobFitProviderController {
         }
 
         if (!FileValidationUtil.isPdfFile(jobDescription)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Job Description must be a PDF");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Job Description must be added");
         }
 
-        log.info("CV uploaded {} - Job Description Uploaded {} - PDF files ", cv.getOriginalFilename(), jobDescription.getOriginalFilename());
+        log.debug("CV uploaded {} - Job Description pasted {} - PDF files ", cv.getOriginalFilename(), jobDescription.getOriginalFilename());
         var candidateCvText = textExtractor.extractText(cv);
         var jobDescriptionText = textExtractor.extractText(jobDescription);
         log.debug("Text extracted from documents.");

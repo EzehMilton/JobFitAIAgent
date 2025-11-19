@@ -23,7 +23,7 @@ import org.springframework.util.Assert;
 @Slf4j
 @Agent(name = "job-fit-provider",
         description = "Assesses how well a CV matches a job description and provides a fit score with an explanation",
-        version = "0.0.1",
+        version = "1.0.0",
         beanName = "jobFitProviderAgent")
 @RequiredArgsConstructor
 @Profile("prod")
@@ -124,7 +124,7 @@ public class JobFitProviderAgent {
 
         UpgradedCv upgradedCv = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5_NANO)
+                        .withModel(OpenAiModels.GPT_5)
                 )
                 .createObject(prompt, UpgradedCv.class);
 
