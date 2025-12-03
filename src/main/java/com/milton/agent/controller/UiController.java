@@ -190,6 +190,7 @@ public class UiController {
         model.addAttribute("matchClass", toMatchClass(score));
         model.addAttribute("matchTheme", toMatchTheme(score));
         model.addAttribute("showUpgradeButton", shouldShowUpgradeButton(score));
+        model.addAttribute("showInterviewPrepButton", shouldShowInterviewPrepButton(score));
 
         // Persist data for future CV upgrade
         session.setAttribute(SESSION_JOB_DESCRIPTION, jobDescriptionText);
@@ -290,6 +291,42 @@ public class UiController {
         }
     }
 
+    @GetMapping("/interview-prep-guide")
+    public ResponseEntity<ByteArrayResource> downloadInterviewPrepGuide(HttpSession session) {
+        Integer fitScore = (Integer) session.getAttribute(SESSION_FIT_SCORE);
+        String cvName = (String) session.getAttribute(SESSION_CV_NAME);
+        String jobDescription = (String) session.getAttribute(SESSION_JOB_DESCRIPTION);
+
+        if (fitScore == null || jobDescription == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        String guideText = "Interview Preparation Guide\n\n"
+                + "This placeholder guide shows the type of prep package you will receive.\n\n"
+                + "Suggested actions:\n"
+                + "- Review the job description and match 3-5 achievements to the top requirements.\n"
+                + "- Prepare STAR stories that highlight ownership, impact, and teamwork.\n"
+                + "- Practice a 60-second pitch on why you fit this role.\n"
+                + "- Draft thoughtful questions for the hiring team.\n"
+                + "- Refresh your salary expectations and relocation/remote preferences.\n\n"
+                + "Coming soon: a personalised, AI-generated interview prep kit tailored to your profile.";
+
+        String downloadName = buildInterviewPrepFileName(cvName);
+
+        try {
+            byte[] data = renderPdfFromText(guideText);
+            ByteArrayResource resource = new ByteArrayResource(data);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadName + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .contentLength(data.length)
+                    .body(resource);
+        } catch (IOException e) {
+            log.error("Failed to create interview prep guide PDF", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     private String toMatchLabel(int score) {
         if (score >= 90) return "EXCELLENT MATCH";
         if (score >= 70) return "GOOD MATCH";
@@ -317,6 +354,14 @@ public class UiController {
             return false;
         }
         return score >= upgradeScoreLowerBound && score <= upgradeScoreUpperBound;
+    }
+
+    private boolean shouldShowInterviewPrepButton(int score) {
+        if (upgradeScoreLowerBound >= upgradeScoreUpperBound) {
+            log.warn("Invalid upgrade score bounds configured: lower={} upper={}", upgradeScoreLowerBound, upgradeScoreUpperBound);
+            return false;
+        }
+        return score > upgradeScoreUpperBound;
     }
 
     private void populateUpgradeModel(Model model,
@@ -350,6 +395,23 @@ public class UiController {
         }
 
         return baseName + "-role-ready.pdf";
+    }
+
+    private String buildInterviewPrepFileName(String cvName) {
+        String baseName = (cvName == null || cvName.isBlank()) ? "interview-prep-guide" : cvName;
+        baseName = baseName.replaceAll("\\s+", "-");
+        baseName = baseName.replaceAll("[^A-Za-z0-9._-]", "");
+
+        int dotIndex = baseName.lastIndexOf('.');
+        if (dotIndex > 0) {
+            baseName = baseName.substring(0, dotIndex);
+        }
+
+        if (baseName.isBlank()) {
+            baseName = "interview-prep-guide";
+        }
+
+        return baseName + "-interview-prep.pdf";
     }
 
     private byte[] renderPdfFromText(String text) throws IOException {
