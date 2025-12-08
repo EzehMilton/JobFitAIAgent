@@ -325,6 +325,16 @@ public class UiController {
         }
     }
 
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login"; // must match login.html in templates
+    }
+
+    @GetMapping("/dashboard")
+    public String dashboardPage() {
+        return "dashboard"; // must match dashboard.html in templates
+    }
+
     private String toMatchLabel(int score) {
         if (score >= 90) return "EXCELLENT MATCH";
         if (score >= 70) return "GOOD MATCH";
