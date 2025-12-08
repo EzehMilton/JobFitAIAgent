@@ -6,6 +6,7 @@ import com.milton.agent.models.CvRewriteRequest;
 import com.milton.agent.models.FitScore;
 import com.milton.agent.models.JobFitRequest;
 import com.milton.agent.models.UpgradedCv;
+import com.milton.agent.service.DashboardService;
 import com.milton.agent.service.RateLimitService;
 import com.milton.agent.service.TextExtractor;
 import com.milton.agent.util.FileValidationUtil;
@@ -52,18 +53,22 @@ public class UiController {
 
     private static final String SESSION_CV_TEXT = "storedCvText";
     private static final String SESSION_CV_NAME = "storedCvName";
+    private static final String SESSION_ROLE = "storedRole";
+    private static final String SESSION_COMPANY = "storedCompany";
     private static final String SESSION_JOB_DESCRIPTION = "storedJobDescription";
     private static final String SESSION_FIT_SCORE = "storedFitScore";
     private static final String SESSION_FIT_EXPLANATION = "storedFitExplanation";
     private static final String SESSION_UPGRADED_CV = "generatedUpgradedCv";
     private static final String SESSION_UPGRADED_KEYWORDS = "generatedAtsKeywords";
     private static final String SESSION_UPGRADED_SUMMARY = "generatedOptimisationSummary";
+    private final DashboardService dashboardService;
 
     public UiController(AgentPlatform agentPlatform,
                         TextExtractor textExtractor,
                         RateLimitService rateLimitService,
                         @Value("${jobfit.upgrade-button.lower-score:75}") int upgradeScoreLowerBound,
-                        @Value("${jobfit.upgrade-button.upper-score:85}") int upgradeScoreUpperBound) {
+                        @Value("${jobfit.upgrade-button.upper-score:85}") int upgradeScoreUpperBound, DashboardService dashboardService) {
+        this.dashboardService = dashboardService;
         Assert.isTrue(upgradeScoreLowerBound < upgradeScoreUpperBound,
                 "Upgrade score lower bound must be less than upper bound");
         this.agentPlatform = agentPlatform;
@@ -99,6 +104,8 @@ public class UiController {
     @PostMapping("/generate")
     public String generateScore(@RequestParam(value = "candidateFile", required = false) MultipartFile cv,
                                 @RequestParam(value = "reuseCv", required = false) Boolean reuseCv,
+                                @RequestParam("role") String role,
+                                @RequestParam("company") String company,
                                 @RequestParam("jobDescription") String jobDescription,
                                 @RequestParam(value = "analysisMode", required = false) String analysisMode,
                                 HttpServletRequest request,
@@ -186,11 +193,16 @@ public class UiController {
         model.addAttribute("score", score);
         model.addAttribute("explanation", fitScore.explanation());
         model.addAttribute("cvName", cvFileName);
+        model.addAttribute("role", role);
+        model.addAttribute("company", company);
+        model.addAttribute("jobDescription", jobDescriptionText);
         model.addAttribute("matchLabel", toMatchLabel(score));
         model.addAttribute("matchClass", toMatchClass(score));
         model.addAttribute("matchTheme", toMatchTheme(score));
 
-        // Persist data for future CV upgrade
+        // Persist data for future CV upgrade and dashboard saving
+        session.setAttribute(SESSION_ROLE, role);
+        session.setAttribute(SESSION_COMPANY, company);
         session.setAttribute(SESSION_JOB_DESCRIPTION, jobDescriptionText);
         session.setAttribute(SESSION_FIT_SCORE, score);
         session.setAttribute(SESSION_FIT_EXPLANATION, fitScore.explanation());
@@ -331,8 +343,9 @@ public class UiController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboardPage() {
-        return "dashboard"; // must match dashboard.html in templates
+    public String dashboard(Model model) {
+        model.addAttribute("entries", dashboardService.getAllEntries());
+        return "dashboard";
     }
 
     @GetMapping("/register")
@@ -345,6 +358,25 @@ public class UiController {
         // DUMMY implementation — ignore all input
         return "redirect:/";
     }
+
+    @PostMapping("/dashboard/save")
+    public String saveToDashboard(@RequestParam String role,
+                                  @RequestParam String company,
+                                  @RequestParam String jobDescription,
+                                  @RequestParam int score,
+                                  RedirectAttributes redirectAttributes) {
+
+        if (!dashboardService.canAddNewEntry()) {
+            redirectAttributes.addFlashAttribute("error", "You have reached the maximum of 20 saved results.");
+            return "redirect:/dashboard";
+        }
+
+        dashboardService.saveEntry(role, company, jobDescription, score);
+
+        redirectAttributes.addFlashAttribute("success", "Saved to dashboard!");
+        return "redirect:/dashboard";
+    }
+
 
     private String toMatchLabel(int score) {
         if (score >= 90) return "EXCELLENT MATCH";

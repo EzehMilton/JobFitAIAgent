@@ -933,10 +933,16 @@
                     <i class="fas fa-redo me-2"></i>
                     Analyze Another Position
                 </a>
-                <a class="btn btn-upgrade" th:href="@{/dashboard}" title="Save this result to your dashboard">
-                    <i class="fas fa-save me-2"></i>
-                    Save to Dashboard
-                </a>
+                <form th:action="@{/dashboard/save}" method="post" style="display: inline;">
+                    <input type="hidden" name="role" th:value="${role}">
+                    <input type="hidden" name="company" th:value="${company}">
+                    <input type="hidden" name="jobDescription" th:value="${jobDescription}">
+                    <input type="hidden" name="score" th:value="${score}">
+                    <button type="submit" class="btn btn-upgrade" title="Save this result to your dashboard">
+                        <i class="fas fa-save me-2"></i>
+                        Save to Dashboard
+                    </button>
+                </form>
                 <button class="btn btn-close-results" onclick="document.getElementById('resultsOverlay').style.display='none'">
                     <i class="fas fa-times me-2"></i>
                     Close Results
@@ -1050,18 +1056,34 @@
 
             var isReusing = reuseCvCheckbox && reuseCvCheckbox.checked;
             var hasFile = fileInput.files && fileInput.files.length > 0;
+            var role = document.getElementById('role').value.trim();
+            var company = document.getElementById('company').value.trim();
             var jobDesc = jobDescTextarea.value.trim();
             var selectedModeInput = document.querySelector('input[name=\"analysisMode\"]:checked');
             var selectedMode = selectedModeInput ? selectedModeInput.value : 'quick';
 
             console.log('Reusing CV:', isReusing);
             console.log('Has file:', hasFile);
+            console.log('Role:', role);
+            console.log('Company:', company);
             console.log('Job description length:', jobDesc.length);
             console.log('Response mode:', selectedMode);
 
             // Validation
             if (!isReusing && !hasFile) {
                 alert('Please upload a CV or check "Reuse previous CV"');
+                return;
+            }
+
+            if (!role) {
+                alert('Please enter the role/job title');
+                document.getElementById('role').focus();
+                return;
+            }
+
+            if (!company) {
+                alert('Please enter the company name');
+                document.getElementById('company').focus();
                 return;
             }
 
@@ -1102,6 +1124,8 @@
                 formData.append('candidateFile', fileInput.files[0]);
                 console.log('Submitting with file:', fileInput.files[0].name);
             }
+            formData.append('role', role);
+            formData.append('company', company);
             formData.append('jobDescription', jobDesc);
             formData.append('analysisMode', selectedMode);
 

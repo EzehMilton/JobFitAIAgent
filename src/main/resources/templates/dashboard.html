@@ -148,62 +148,37 @@
             <h4 class="mb-3 fw-bold">Your Recent JobFit Analyses</h4>
 
             <div class="table-responsive">
-                <table class="table table-bordered align-middle">
+                <table class="table table-striped align-middle mt-4">
                     <thead>
                     <tr>
                         <th>Date</th>
                         <th>Role</th>
                         <th>Company</th>
                         <th>Score</th>
-                        <th>Called for Interview</th>
-                        <th>Action</th>
+                        <th>Interview?</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
-
                     <tbody>
                     <tr th:each="entry : ${entries}">
-                        <td th:text="${entry.date}">2025-01-01</td>
-                        <td th:text="${entry.role}">Backend Engineer</td>
-                        <td th:text="${entry.company}">Amazon</td>
+                        <td th:text="${entry.createdAt}"></td>
+                        <td th:text="${entry.roleTitle}"></td>
+                        <td th:text="${entry.companyName}"></td>
+                        <td th:text="${entry.score}"></td>
 
-                        <!-- Score badge -->
-                        <td>
-                            <span class="score-badge"
-                                  th:classappend="${entry.score >= 85 ? ' score-good' :
-                                                  (entry.score >= 70 ? ' score-ok' : ' score-bad')}"
-                                  th:text="${entry.score}">
-                            </span>
-                        </td>
-
-                        <!-- Checkbox -->
                         <td>
                             <input type="checkbox"
-                                   th:checked="${entry.calledForInterview}"
-                                   th:onclick="'updateInterviewStatus(' + ${entry.id} + ', this.checked)'">
+                                   th:checked="${entry.calledForInterview}">
                         </td>
 
-                        <!-- Actions -->
                         <td>
-                            <!-- Only allow CV Upgrade if score between 70–85 -->
-                            <a th:if="${entry.score >= 70 and entry.score < 85}"
-                               th:href="@{'/upgrade-cv/' + ${entry.id}}"
-                               class="action-link">Upgrade CV</a>
-
-                            <!-- If checkbox is selected, show prepare-for-interview -->
-                            <a th:if="${entry.calledForInterview}"
-                               th:href="@{'/prepare-interview/' + ${entry.id}}"
-                               class="action-link ms-2">Prepare for Interview</a>
+                            <a th:if="${entry.cvUpgradeAvailable}" class="btn btn-sm btn-primary" href="/upgrade-cv">Upgrade CV</a>
+                            <a th:if="${entry.interviewPrepAvailable}" class="btn btn-sm btn-success" href="/interview-prep-guide">Interview Prep</a>
                         </td>
                     </tr>
-
-                    <tr th:if="${#lists.isEmpty(entries)}">
-                        <td colspan="6" class="text-center text-muted py-4">
-                            No analyses yet — run your first JobFit score!
-                        </td>
-                    </tr>
-
                     </tbody>
                 </table>
+
             </div>
 
         </div>
