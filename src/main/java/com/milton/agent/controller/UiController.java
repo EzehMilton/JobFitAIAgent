@@ -189,8 +189,6 @@ public class UiController {
         model.addAttribute("matchLabel", toMatchLabel(score));
         model.addAttribute("matchClass", toMatchClass(score));
         model.addAttribute("matchTheme", toMatchTheme(score));
-        model.addAttribute("showUpgradeButton", shouldShowUpgradeButton(score));
-        model.addAttribute("showInterviewPrepButton", shouldShowInterviewPrepButton(score));
 
         // Persist data for future CV upgrade
         session.setAttribute(SESSION_JOB_DESCRIPTION, jobDescriptionText);
