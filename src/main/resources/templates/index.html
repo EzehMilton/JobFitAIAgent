@@ -737,6 +737,10 @@
                         <a href="/login" class="fw-semibold" style="text-decoration: none; color: #2d3748;">
                             <i class="fas fa-sign-in-alt me-1"></i> Login
                         </a>
+
+                        <a href="/register" class="fw-semibold ms-3" style="text-decoration: none; color: #2d3748;">
+                            <i class="fas fa-user-plus me-1"></i> Register
+                        </a>
                     </div>
                     <div th:if="${error}" class="alert alert-danger" role="alert">
                         <i class="fas fa-exclamation-circle me-2"></i>
@@ -748,7 +752,7 @@
                         <div class="rate-limit-content">
                             <i class="fas fa-chart-bar me-2"></i>
                             <span class="rate-limit-text">
-                  <strong>Beta Version (Free):</strong>
+                  <strong>Free Version:</strong>
                   <span th:text="${remainingRequests}">10</span> of
                   <span th:text="${maxDailyScans}">10</span> scan(s) available today.
                 </span>

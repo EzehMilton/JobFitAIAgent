@@ -335,6 +335,17 @@ public class UiController {
         return "dashboard"; // must match dashboard.html in templates
     }
 
+    @GetMapping("/register")
+    public String showRegisterPage() {
+        return "register"; // your register.html page
+    }
+
+    @PostMapping("/register")
+    public String processRegistration() {
+        // DUMMY implementation — ignore all input
+        return "redirect:/";
+    }
+
     private String toMatchLabel(int score) {
         if (score >= 90) return "EXCELLENT MATCH";
         if (score >= 70) return "GOOD MATCH";
