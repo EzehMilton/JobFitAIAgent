@@ -63,6 +63,8 @@ public class UiController {
     private static final String SESSION_UPGRADED_KEYWORDS = "generatedAtsKeywords";
     private static final String SESSION_UPGRADED_SUMMARY = "generatedOptimisationSummary";
     private static final String SESSION_SUGGESTIONS = "generatedSuggestions";
+    private static final String SESSION_IMPROVE_SCORE = "generatedImproveScore";
+    private static final String SESSION_INTERVIEW_PREP = "generatedInterviewPrep";
     private final DashboardService dashboardService;
 
     public UiController(AgentPlatform agentPlatform,
@@ -443,49 +445,150 @@ public class UiController {
         });
     }
 
-    @GetMapping({"/improve-score", "/improve", "/improve.html"})
-    public String showImproveScore(Model model) {
-        // Placeholder data for improve score page
-        model.addAttribute("entry", new Object() {
-            public final java.util.List<String> gaps = java.util.List.of(
-                "5+ years of leadership experience",
-                "Advanced knowledge of cloud platforms (AWS/Azure)",
-                "Experience with agile methodologies"
+    @GetMapping({"/improve-score/{id}", "/improve-score", "/improve", "/improve.html"})
+    public String showImproveScore(@PathVariable(required = false) Long id,
+                                   HttpSession session,
+                                   Model model,
+                                   RedirectAttributes redirectAttributes) {
+        String candidateCv = (String) session.getAttribute(SESSION_CV_TEXT);
+        String jobDescription = (String) session.getAttribute(SESSION_JOB_DESCRIPTION);
+        Integer fitScore = (Integer) session.getAttribute(SESSION_FIT_SCORE);
+        String fitExplanation = (String) session.getAttribute(SESSION_FIT_EXPLANATION);
+
+        // If coming from dashboard with an entry ID, fetch that entry's data
+        if (id != null) {
+            DashboardEntry entry = dashboardService.getEntryById(id);
+            if (entry != null) {
+                jobDescription = entry.getJobDescription();
+                fitScore = entry.getScore();
+                // We don't have CV text in dashboard entry, so use session if available
+            }
+        }
+
+        if (candidateCv == null || jobDescription == null || fitScore == null) {
+            redirectAttributes.addFlashAttribute("error", "Please run an analysis before requesting improvement recommendations.");
+            return "redirect:/";
+        }
+
+        // Check if improve score is cached in session
+        ImproveScore cachedImproveScore = (ImproveScore) session.getAttribute(SESSION_IMPROVE_SCORE);
+
+        if (cachedImproveScore != null) {
+            log.debug("Serving improve score recommendations from session cache");
+            populateImproveScoreModel(model, cachedImproveScore, id != null ? id : 1L);
+            return "improve";
+        }
+
+        try {
+            ImproveScoreRequest improveScoreRequest = new ImproveScoreRequest(
+                    candidateCv,
+                    jobDescription,
+                    fitScore,
+                    fitExplanation != null ? fitExplanation : ""
             );
-            public final java.util.List<String> alignmentIssues = java.util.List.of(
-                "CV highlights individual contributor work; JD stresses team leadership",
-                "JD expects cloud platform depth; CV shows limited AWS/Azure exposure",
-                "Limited evidence of agile delivery metrics in recent roles"
-            );
-            public final java.util.List<String> keywordSuggestions = java.util.List.of(
-                "Sprint planning", "AWS", "Azure", "Stakeholder management", "KPIs", "Roadmapping"
-            );
-            public final String achievementAdvice = "Reframe recent achievements with metrics (latency, revenue impact, cost savings). Add one example showing cross-team leadership and one cloud migration story.";
-            public final Long id = 1L;
-        });
-        return "improve";
+
+            var improveScoreInvocation = AgentInvocation.create(agentPlatform, ImproveScore.class);
+            ImproveScore improveScore = improveScoreInvocation.invoke(improveScoreRequest);
+
+            // Cache the improve score in session
+            session.setAttribute(SESSION_IMPROVE_SCORE, improveScore);
+
+            populateImproveScoreModel(model, improveScore, id != null ? id : 1L);
+
+            return "improve";
+        } catch (Exception ex) {
+            log.error("Failed to generate improve score recommendations", ex);
+            redirectAttributes.addFlashAttribute("error", "We couldn't generate improvement recommendations right now. Please try again in a moment.");
+            return "redirect:/";
+        }
     }
 
-    @GetMapping({"/get-ready", "/getready"})
-    public String showGetReady(Model model) {
-        // Placeholder data for get ready page
+    private void populateImproveScoreModel(Model model, ImproveScore improveScore, Long entryId) {
         model.addAttribute("entry", new Object() {
-            public final String pitch = "I bring 3+ years of experience in software development with a strong focus on backend systems. " +
-                "I'm particularly excited about this role because it aligns with my expertise in building scalable solutions and my passion for solving complex technical challenges.";
-            public final java.util.List<String> questions = java.util.List.of(
-                "Tell me about a time when you had to solve a difficult technical problem.",
-                "How do you approach code reviews and collaboration with your team?",
-                "What interests you most about this role and our company?"
-            );
-            public final java.util.List<String> starStories = java.util.List.of(
-                "Story about optimizing database performance under pressure",
-                "Example of leading a cross-functional project",
-                "Time when you mentored junior developers"
-            );
-            public final String prepAdvice = "Research the company's tech stack, prepare questions about team structure, and review your past projects that demonstrate relevant experience.";
-            public final Long id = 1L;
+            public final java.util.List<String> gaps = improveScore.gaps() != null ?
+                    improveScore.gaps() : List.of();
+            public final java.util.List<String> alignmentIssues = improveScore.alignmentIssues() != null ?
+                    improveScore.alignmentIssues() : List.of();
+            public final java.util.List<String> keywordSuggestions = improveScore.keywordSuggestions() != null ?
+                    improveScore.keywordSuggestions() : List.of();
+            public final java.util.List<String> courseRecommendations = improveScore.courseRecommendations() != null ?
+                    improveScore.courseRecommendations() : List.of();
+            public final String achievementAdvice = improveScore.achievementAdvice() != null ?
+                    improveScore.achievementAdvice() : "Focus on adding measurable achievements to demonstrate impact.";
+            public final Long id = entryId;
         });
-        return "getready";
+    }
+
+    @GetMapping({"/get-ready/{id}", "/get-ready", "/getready"})
+    public String showGetReady(@PathVariable(required = false) Long id,
+                               HttpSession session,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
+        String candidateCv = (String) session.getAttribute(SESSION_CV_TEXT);
+        String jobDescription = (String) session.getAttribute(SESSION_JOB_DESCRIPTION);
+        Integer fitScore = (Integer) session.getAttribute(SESSION_FIT_SCORE);
+        String fitExplanation = (String) session.getAttribute(SESSION_FIT_EXPLANATION);
+
+        // If coming from dashboard with an entry ID, fetch that entry's data
+        if (id != null) {
+            DashboardEntry entry = dashboardService.getEntryById(id);
+            if (entry != null) {
+                jobDescription = entry.getJobDescription();
+                fitScore = entry.getScore();
+                // We don't have CV text in dashboard entry, so use session if available
+            }
+        }
+
+        if (candidateCv == null || jobDescription == null || fitScore == null) {
+            redirectAttributes.addFlashAttribute("error", "Please run an analysis before requesting interview preparation.");
+            return "redirect:/";
+        }
+
+        // Check if interview prep is cached in session
+        InterviewPrep cachedInterviewPrep = (InterviewPrep) session.getAttribute(SESSION_INTERVIEW_PREP);
+
+        if (cachedInterviewPrep != null) {
+            log.debug("Serving interview prep from session cache");
+            populateInterviewPrepModel(model, cachedInterviewPrep, id != null ? id : 1L);
+            return "getready";
+        }
+
+        try {
+            InterviewPrepRequest interviewPrepRequest = new InterviewPrepRequest(
+                    candidateCv,
+                    jobDescription,
+                    fitScore,
+                    fitExplanation != null ? fitExplanation : ""
+            );
+
+            var interviewPrepInvocation = AgentInvocation.create(agentPlatform, InterviewPrep.class);
+            InterviewPrep interviewPrep = interviewPrepInvocation.invoke(interviewPrepRequest);
+
+            // Cache the interview prep in session
+            session.setAttribute(SESSION_INTERVIEW_PREP, interviewPrep);
+
+            populateInterviewPrepModel(model, interviewPrep, id != null ? id : 1L);
+
+            return "getready";
+        } catch (Exception ex) {
+            log.error("Failed to generate interview prep", ex);
+            redirectAttributes.addFlashAttribute("error", "We couldn't generate interview preparation content right now. Please try again in a moment.");
+            return "redirect:/";
+        }
+    }
+
+    private void populateInterviewPrepModel(Model model, InterviewPrep interviewPrep, Long entryId) {
+        model.addAttribute("entry", new Object() {
+            public final String pitch = interviewPrep.pitch() != null ?
+                    interviewPrep.pitch() : "Prepare a 60-second pitch highlighting your key achievements and why you're excited about this role.";
+            public final java.util.List<String> questions = interviewPrep.questions() != null ?
+                    interviewPrep.questions() : List.of();
+            public final java.util.List<String> starStories = interviewPrep.starStories() != null ?
+                    interviewPrep.starStories() : List.of();
+            public final String prepAdvice = interviewPrep.prepAdvice() != null ?
+                    interviewPrep.prepAdvice() : "Research the company culture and review your key achievements relevant to this role.";
+            public final Long id = entryId;
+        });
     }
 
     @PostMapping("/dashboard/save")
