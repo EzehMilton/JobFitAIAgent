@@ -155,7 +155,6 @@
                         <th>Role</th>
                         <th>Company</th>
                         <th>Score</th>
-                        <th>Interview?</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
@@ -165,15 +164,9 @@
                         <td th:text="${entry.roleTitle}"></td>
                         <td th:text="${entry.companyName}"></td>
                         <td th:text="${entry.score}"></td>
-
                         <td>
-                            <input type="checkbox"
-                                   th:checked="${entry.calledForInterview}">
-                        </td>
-
-                        <td>
-                            <a th:if="${entry.cvUpgradeAvailable}" class="btn btn-sm btn-primary" href="/upgrade-cv">Upgrade CV</a>
-                            <a th:if="${entry.interviewPrepAvailable}" class="btn btn-sm btn-success" href="/interview-prep-guide">Interview Prep</a>
+                            <a th:if="${entry.cvUpgradeAvailable}" class="btn btn-sm btn-primary" href="/upgrade-cv">Tailor CV</a>
+                            <a th:if="${entry.interviewPrepAvailable}" class="btn btn-sm btn-success" href="/interview-prep-guide">Get Ready</a>
                         </td>
                     </tr>
                     </tbody>
@@ -184,12 +177,6 @@
         </div>
     </div>
 </div>
-
-<script>
-    function updateInterviewStatus(id, checked) {
-        fetch('/dashboard/interview-status/' + id + '?checked=' + checked, { method: 'POST' });
-    }
-</script>
 
 </body>
 </html>

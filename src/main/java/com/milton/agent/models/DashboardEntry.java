@@ -25,8 +25,6 @@ public class DashboardEntry {
 
     private int score;
 
-    private boolean calledForInterview;
-
     private boolean cvUpgradeAvailable;
     private boolean interviewPrepAvailable;
 

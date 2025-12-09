@@ -37,19 +37,11 @@ public class DashboardService {
                 .companyName(company)
                 .jobDescription(jobDescription)
                 .score(score)
-                .calledForInterview(false)
                 .cvUpgradeAvailable(showUpgrade)
                 .interviewPrepAvailable(showInterviewPrep)
                 .createdAt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
                 .build();
 
         repository.save(entry);
-    }
-
-    public void toggleInterviewStatus(Long id) {
-        repository.findById(id).ifPresent(entry -> {
-            entry.setCalledForInterview(!entry.isCalledForInterview());
-            repository.save(entry);
-        });
     }
 }
