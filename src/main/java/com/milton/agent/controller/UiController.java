@@ -50,6 +50,9 @@ public class UiController {
 
     private final int upgradeScoreLowerBound;
     private final int upgradeScoreUpperBound;
+    private final int excellentThreshold;
+    private final int goodThreshold;
+    private final int partialThreshold;
 
     private static final String SESSION_CV_TEXT = "storedCvText";
     private static final String SESSION_CV_NAME = "storedCvName";
@@ -66,8 +69,12 @@ public class UiController {
     public UiController(AgentPlatform agentPlatform,
                         TextExtractor textExtractor,
                         RateLimitService rateLimitService,
-                        @Value("${jobfit.upgrade-button.lower-score:75}") int upgradeScoreLowerBound,
-                        @Value("${jobfit.upgrade-button.upper-score:85}") int upgradeScoreUpperBound, DashboardService dashboardService) {
+                        @Value("${jobfit.score.cv-upgrade-lower:75}") int upgradeScoreLowerBound,
+                        @Value("${jobfit.score.cv-upgrade-upper:85}") int upgradeScoreUpperBound,
+                        @Value("${jobfit.score.excellent-threshold:90}") int excellentThreshold,
+                        @Value("${jobfit.score.good-threshold:70}") int goodThreshold,
+                        @Value("${jobfit.score.partial-threshold:50}") int partialThreshold,
+                        DashboardService dashboardService) {
         this.dashboardService = dashboardService;
         Assert.isTrue(upgradeScoreLowerBound < upgradeScoreUpperBound,
                 "Upgrade score lower bound must be less than upper bound");
@@ -76,6 +83,9 @@ public class UiController {
         this.rateLimitService = rateLimitService;
         this.upgradeScoreLowerBound = upgradeScoreLowerBound;
         this.upgradeScoreUpperBound = upgradeScoreUpperBound;
+        this.excellentThreshold = excellentThreshold;
+        this.goodThreshold = goodThreshold;
+        this.partialThreshold = partialThreshold;
     }
 
     @GetMapping({"/"})
@@ -359,6 +369,65 @@ public class UiController {
         return "redirect:/";
     }
 
+    @GetMapping("/suggestions")
+    public String showSuggestions(Model model) {
+        // Placeholder data for suggestions page
+        model.addAttribute("entry", new Object() {
+            public final java.util.List<String> jobTitles = java.util.List.of(
+                "Business Analyst", "Product Manager", "Data Analyst"
+            );
+            public final java.util.List<String> companies = java.util.List.of(
+                "Tech Startups", "Consulting Firms", "Financial Services"
+            );
+            public final java.util.List<String> skills = java.util.List.of(
+                "Data Analysis", "Project Management", "Communication"
+            );
+            public final String advice = "Focus on building foundational skills and consider entry-level positions that match your background.";
+        });
+        return "suggestions";
+    }
+
+    @GetMapping({"/improve-score", "/improve"})
+    public String showImproveScore(Model model) {
+        // Placeholder data for improve score page
+        model.addAttribute("entry", new Object() {
+            public final java.util.List<String> gaps = java.util.List.of(
+                "5+ years of leadership experience",
+                "Advanced knowledge of cloud platforms (AWS/Azure)",
+                "Experience with agile methodologies"
+            );
+            public final java.util.List<String> actions = java.util.List.of(
+                "Take online courses in cloud computing",
+                "Highlight any informal leadership roles in your CV",
+                "Gain certification in Scrum or Agile"
+            );
+            public final String strategicAdvice = "Consider targeting mid-level roles first to gain the required experience, or emphasize transferable skills from your current background.";
+        });
+        return "improve";
+    }
+
+    @GetMapping({"/get-ready", "/getready"})
+    public String showGetReady(Model model) {
+        // Placeholder data for get ready page
+        model.addAttribute("entry", new Object() {
+            public final String pitch = "I bring 3+ years of experience in software development with a strong focus on backend systems. " +
+                "I'm particularly excited about this role because it aligns with my expertise in building scalable solutions and my passion for solving complex technical challenges.";
+            public final java.util.List<String> questions = java.util.List.of(
+                "Tell me about a time when you had to solve a difficult technical problem.",
+                "How do you approach code reviews and collaboration with your team?",
+                "What interests you most about this role and our company?"
+            );
+            public final java.util.List<String> starStories = java.util.List.of(
+                "Story about optimizing database performance under pressure",
+                "Example of leading a cross-functional project",
+                "Time when you mentored junior developers"
+            );
+            public final String prepAdvice = "Research the company's tech stack, prepare questions about team structure, and review your past projects that demonstrate relevant experience.";
+            public final Long id = 1L;
+        });
+        return "getready";
+    }
+
     @PostMapping("/dashboard/save")
     public String saveToDashboard(@RequestParam String role,
                                   @RequestParam String company,
@@ -379,23 +448,23 @@ public class UiController {
 
 
     private String toMatchLabel(int score) {
-        if (score >= 90) return "EXCELLENT MATCH";
-        if (score >= 70) return "GOOD MATCH";
-        if (score >= 50) return "PARTIAL MATCH";
+        if (score >= excellentThreshold) return "EXCELLENT MATCH";
+        if (score >= goodThreshold) return "GOOD MATCH";
+        if (score >= partialThreshold) return "PARTIAL MATCH";
         return "WEAK MATCH";
     }
 
     private String toMatchClass(int score) {
-        if (score >= 90) return "match-badge-excellent";
-        if (score >= 70) return "match-badge-good";
-        if (score >= 50) return "match-badge-partial";
+        if (score >= excellentThreshold) return "match-badge-excellent";
+        if (score >= goodThreshold) return "match-badge-good";
+        if (score >= partialThreshold) return "match-badge-partial";
         return "match-badge-weak";
     }
 
     private String toMatchTheme(int score) {
-        if (score >= 90) return "match-theme-excellent";
-        if (score >= 70) return "match-theme-good";
-        if (score >= 50) return "match-theme-partial";
+        if (score >= excellentThreshold) return "match-theme-excellent";
+        if (score >= goodThreshold) return "match-theme-good";
+        if (score >= partialThreshold) return "match-theme-partial";
         return "match-theme-weak";
     }
 

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Suggestions – JobFit</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-shadow: 0 12px 35px rgba(0,0,0,.12);
+        }
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        .action-card {
+            background: #fff;
+            border-radius: 22px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            max-width: 850px;
+            margin: auto;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .section-title {
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: .75rem;
+            color: #4a4a4a;
+        }
+    </style>
+</head>
+
+<body>
+<div class="action-card">
+
+    <h1><i class="fas fa-compass me-2"></i> Suggestions for Your Career Direction</h1>
+    <p class="text-muted">Based on your score, we analysed patterns in your CV and job description.</p>
+
+    <!-- Job Title Suggestions -->
+    <div>
+        <div class="section-title"><i class="fas fa-briefcase me-2"></i>Recommended Job Titles</div>
+        <ul>
+            <li th:each="title : ${entry.suggestedTitles}" th:text="${title}"></li>
+        </ul>
+    </div>
+
+    <!-- Skills -->
+    <div>
+        <div class="section-title"><i class="fas fa-layer-group me-2"></i>Skill Clusters</div>
+        <ul>
+            <li th:each="skill : ${entry.skillClusters}" th:text="${skill}"></li>
+        </ul>
+    </div>
+
+    <!-- Strengths -->
+    <div>
+        <div class="section-title"><i class="fas fa-thumbs-up me-2"></i>Your Strengths</div>
+        <ul>
+            <li th:each="s : ${entry.strengths}" th:text="${s}"></li>
+        </ul>
+    </div>
+
+    <!-- Weaknesses -->
+    <div>
+        <div class="section-title"><i class="fas fa-triangle-exclamation me-2"></i>Areas to Improve</div>
+        <ul>
+            <li th:each="w : ${entry.weaknesses}" th:text="${w}"></li>
+        </ul>
+    </div>
+
+    <!-- Career Direction -->
+    <div>
+        <div class="section-title"><i class="fas fa-map-signs me-2"></i>Career Direction</div>
+        <p th:text="${entry.careerDirection}"></p>
+    </div>
+
+    <!-- Buttons -->
+    <div class="mt-4 d-flex gap-2">
+        <a class="btn btn-secondary" href="/dashboard"><i class="fas fa-arrow-left me-1"></i> Back</a>
+        <a class="btn btn-primary" th:href="@{'/dashboard/action/' + ${entry.id} + '/download'}">
+            <i class="fas fa-file-download me-1"></i> Download PDF
+        </a>
+    </div>
+
+</div>
+</body>
+</html>
