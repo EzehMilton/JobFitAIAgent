@@ -2,10 +2,7 @@ package com.milton.agent.controller;
 
 import com.embabel.agent.api.common.autonomy.AgentInvocation;
 import com.embabel.agent.core.AgentPlatform;
-import com.milton.agent.models.CvRewriteRequest;
-import com.milton.agent.models.FitScore;
-import com.milton.agent.models.JobFitRequest;
-import com.milton.agent.models.UpgradedCv;
+import com.milton.agent.models.*;
 import com.milton.agent.service.DashboardService;
 import com.milton.agent.service.RateLimitService;
 import com.milton.agent.service.TextExtractor;
@@ -29,6 +26,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,6 +62,7 @@ public class UiController {
     private static final String SESSION_UPGRADED_CV = "generatedUpgradedCv";
     private static final String SESSION_UPGRADED_KEYWORDS = "generatedAtsKeywords";
     private static final String SESSION_UPGRADED_SUMMARY = "generatedOptimisationSummary";
+    private static final String SESSION_SUGGESTIONS = "generatedSuggestions";
     private final DashboardService dashboardService;
 
     public UiController(AgentPlatform agentPlatform,
@@ -369,31 +368,79 @@ public class UiController {
         return "redirect:/";
     }
 
-    @GetMapping({"/suggestions", "/suggestions.html"})
-    public String showSuggestions(Model model) {
-        // Placeholder data for suggestions page
+    @GetMapping({"/suggestions/{id}", "/suggestions.html"})
+    public String showSuggestions(@PathVariable(required = false) Long id,
+                                  HttpSession session,
+                                  Model model,
+                                  RedirectAttributes redirectAttributes) {
+        String candidateCv = (String) session.getAttribute(SESSION_CV_TEXT);
+        String jobDescription = (String) session.getAttribute(SESSION_JOB_DESCRIPTION);
+        Integer fitScore = (Integer) session.getAttribute(SESSION_FIT_SCORE);
+        String fitExplanation = (String) session.getAttribute(SESSION_FIT_EXPLANATION);
+
+        // If coming from dashboard with an entry ID, fetch that entry's data
+        if (id != null) {
+            DashboardEntry entry = dashboardService.getEntryById(id);
+            if (entry != null) {
+                jobDescription = entry.getJobDescription();
+                fitScore = entry.getScore();
+                // We don't have CV text in dashboard entry, so use session if available
+            }
+        }
+
+        if (candidateCv == null || jobDescription == null || fitScore == null) {
+            redirectAttributes.addFlashAttribute("error", "Please run an analysis before requesting career suggestions.");
+            return "redirect:/";
+        }
+
+        // Check if suggestions are cached in session
+        @SuppressWarnings("unchecked")
+        CareerSuggestions cachedSuggestions = (CareerSuggestions) session.getAttribute(SESSION_SUGGESTIONS);
+
+        if (cachedSuggestions != null) {
+            log.debug("Serving career suggestions from session cache");
+            populateSuggestionsModel(model, cachedSuggestions, id != null ? id : 1L);
+            return "suggestions";
+        }
+
+        try {
+            SuggestionsRequest suggestionsRequest = new SuggestionsRequest(
+                    candidateCv,
+                    jobDescription,
+                    fitScore,
+                    fitExplanation != null ? fitExplanation : ""
+            );
+
+            var suggestionsInvocation = AgentInvocation.create(agentPlatform, CareerSuggestions.class);
+            CareerSuggestions suggestions = suggestionsInvocation.invoke(suggestionsRequest);
+
+            // Cache the suggestions in session
+            session.setAttribute(SESSION_SUGGESTIONS, suggestions);
+
+            populateSuggestionsModel(model, suggestions, id != null ? id : 1L);
+
+            return "suggestions";
+        } catch (Exception ex) {
+            log.error("Failed to generate career suggestions", ex);
+            redirectAttributes.addFlashAttribute("error", "We couldn't generate career suggestions right now. Please try again in a moment.");
+            return "redirect:/";
+        }
+    }
+
+    private void populateSuggestionsModel(Model model, CareerSuggestions suggestions, Long entryId) {
         model.addAttribute("entry", new Object() {
-            public final java.util.List<String> suggestedTitles = java.util.List.of(
-                "Business Analyst", "Product Manager", "Data Analyst"
-            );
-            public final java.util.List<String> skillClusters = java.util.List.of(
-                "Product strategy and discovery",
-                "Stakeholder communication",
-                "Data-driven decision making"
-            );
-            public final java.util.List<String> strengths = java.util.List.of(
-                "Strong communication and storytelling",
-                "Experience collaborating with cross-functional teams",
-                "Comfortable with data and experimentation"
-            );
-            public final java.util.List<String> weaknesses = java.util.List.of(
-                "Limited experience owning P&L",
-                "Needs deeper exposure to enterprise-scale launches"
-            );
-            public final String careerDirection = "Consider Associate Product Manager or Business Analyst roles in tech or consulting to deepen ownership experience while leveraging your analytical strengths.";
-            public final Long id = 1L;
+            public final java.util.List<String> suggestedTitles = suggestions.suggestedTitles() != null ?
+                    suggestions.suggestedTitles() : List.of();
+            public final java.util.List<String> skillClusters = suggestions.skillClusters() != null ?
+                    suggestions.skillClusters() : List.of();
+            public final java.util.List<String> strengths = suggestions.strengths() != null ?
+                    suggestions.strengths() : List.of();
+            public final java.util.List<String> weaknesses = suggestions.weaknesses() != null ?
+                    suggestions.weaknesses() : List.of();
+            public final String careerDirection = suggestions.careerDirection() != null ?
+                    suggestions.careerDirection() : "Focus on developing your skills and gaining relevant experience.";
+            public final Long id = entryId;
         });
-        return "suggestions";
     }
 
     @GetMapping({"/improve-score", "/improve", "/improve.html"})

@@ -44,6 +44,10 @@ public class DashboardService {
         return repository.findByUserIdOrderByIdDesc(DUMMY_USER_ID);
     }
 
+    public DashboardEntry getEntryById(Long id) {
+        return repository.findById(id).orElse(null);
+    }
+
     public boolean canAddNewEntry() {
         return repository.countByUserId(DUMMY_USER_ID) < MAX_ROWS;
     }

@@ -60,6 +60,14 @@
         </ul>
     </div>
 
+    <!-- NEW SECTION: COURSE RECOMMENDATIONS -->
+    <div>
+        <div class="section-title">Recommended Courses</div>
+        <ul>
+            <li th:each="course : ${entry.courseRecommendations}" th:text="${course}"></li>
+        </ul>
+    </div>
+
     <div>
         <div class="section-title">Achievement Enhancements</div>
         <p th:text="${entry.achievementAdvice}"></p>

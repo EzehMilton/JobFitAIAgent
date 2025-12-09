@@ -8,12 +8,7 @@ import com.embabel.agent.config.models.OpenAiModels;
 import com.embabel.common.ai.model.LlmOptions;
 import com.embabel.common.ai.model.Thinking;
 import com.milton.agent.config.PromptLoader;
-import com.milton.agent.models.CvRewriteRequest;
-import com.milton.agent.models.CvSkills;
-import com.milton.agent.models.FitScore;
-import com.milton.agent.models.JobFitRequest;
-import com.milton.agent.models.JobRequirements;
-import com.milton.agent.models.UpgradedCv;
+import com.milton.agent.models.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -130,5 +125,83 @@ public class JobFitProviderAgent {
 
         Assert.notNull(upgradedCv, "Upgraded CV cannot be null");
         return upgradedCv;
+    }
+
+    @AchievesGoal(description = "Generates personalized career suggestions based on CV and job description analysis")
+    @Action
+    public CareerSuggestions generateCareerSuggestions(SuggestionsRequest request, CvSkills cvSkills, JobRequirements jobRequirements, OperationContext context) {
+        log.info("Generating career suggestions for fit score {}", request.fitScore());
+
+        String promptTemplate = promptLoader.loadPrompt("suggestions.txt");
+
+        String cvSkillsStr = cvSkills != null ? cvSkills.toString() : "";
+        String jobReqStr = jobRequirements != null ? jobRequirements.toString() : "";
+        String fitExplanation = request.fitExplanation() != null ? request.fitExplanation() : "";
+        String cvText = request.candidateCv() != null ? request.candidateCv() : "";
+
+        String prompt = promptTemplate
+                .replace("%s", "%s") // keep placeholders literal safety
+                .replace("- FIT SCORE (0-100): %s", "- FIT SCORE (0-100): " + request.fitScore())
+                .replace("- FIT EXPLANATION: %s", "- FIT EXPLANATION: " + fitExplanation)
+                .replace("- EXTRACTED CV SKILLS: %s", "- EXTRACTED CV SKILLS: " + cvSkillsStr)
+                .replace("- JOB REQUIREMENTS: %s", "- JOB REQUIREMENTS: " + jobReqStr)
+                .replace("- CV TEXT: %s", "- CV TEXT: " + cvText);
+
+        CareerSuggestions suggestions = context.ai()
+                .withLlm(LlmOptions
+                        .withModel(OpenAiModels.GPT_5)
+                )
+                .createObject(prompt, CareerSuggestions.class);
+
+        Assert.notNull(suggestions, "Career suggestions cannot be null");
+        return suggestions;
+    }
+
+    @Action
+    public CvSkills extractSkillsForSuggestions(SuggestionsRequest request, OperationContext context) {
+        log.info("Extracting key skills from CV for suggestions");
+
+        String skillsExtractorPrompt = promptLoader.loadPrompt("skills-extractor.txt");
+        String cvText = request.candidateCv();
+        String prompt = skillsExtractorPrompt + "\n\nCV TEXT:\n" + cvText;
+
+        CvSkills cvSkills = context.ai()
+                .withLlm(LlmOptions
+                        .withModel(OpenAiModels.GPT_41_MINI)
+                        .withTemperature(0.1)
+                        .withTopP(0.90)
+                        .withFrequencyPenalty(0.0)
+                        .withPresencePenalty(0.0)
+                        .withMaxTokens(500)
+                )
+                .createObject(prompt, CvSkills.class);
+
+        Assert.notNull(cvSkills, "CV skills cannot be null");
+        log.info("Skills extracted from CV for suggestions");
+        return cvSkills;
+    }
+
+    @Action
+    public JobRequirements extractRequirementsForSuggestions(SuggestionsRequest request, OperationContext context) {
+        log.info("Extracting job requirements for suggestions");
+
+        String jobDescriptionPrompt = promptLoader.loadPrompt("job-description-extractor.txt");
+        String prompt = jobDescriptionPrompt + "\n\nJOB DESCRIPTION:\n" +
+                (request.jobDescription() == null ? "" : request.jobDescription());
+
+        JobRequirements requirements = context.ai()
+                .withLlm(LlmOptions
+                        .withModel(OpenAiModels.GPT_41_MINI)
+                        .withTemperature(0.2)
+                        .withTopP(0.90)
+                        .withFrequencyPenalty(0.0)
+                        .withPresencePenalty(0.0)
+                        .withMaxTokens(600)
+                )
+                .createObject(prompt, JobRequirements.class);
+
+        Assert.notNull(requirements, "Job requirements cannot be null");
+        log.info("Job requirements extracted for suggestions");
+        return requirements;
     }
 }
