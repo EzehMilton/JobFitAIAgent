@@ -233,7 +233,7 @@ public class UiController {
         return "index";
     }
 
-    @GetMapping("/upgrade-cv")
+    @GetMapping({"/upgrade-cv", "/upgrade_cv.html"})
     public String showUpgradeCv(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         String originalCv = (String) session.getAttribute(SESSION_CV_TEXT);
         String jobDescription = (String) session.getAttribute(SESSION_JOB_DESCRIPTION);
@@ -369,25 +369,34 @@ public class UiController {
         return "redirect:/";
     }
 
-    @GetMapping("/suggestions")
+    @GetMapping({"/suggestions", "/suggestions.html"})
     public String showSuggestions(Model model) {
         // Placeholder data for suggestions page
         model.addAttribute("entry", new Object() {
-            public final java.util.List<String> jobTitles = java.util.List.of(
+            public final java.util.List<String> suggestedTitles = java.util.List.of(
                 "Business Analyst", "Product Manager", "Data Analyst"
             );
-            public final java.util.List<String> companies = java.util.List.of(
-                "Tech Startups", "Consulting Firms", "Financial Services"
+            public final java.util.List<String> skillClusters = java.util.List.of(
+                "Product strategy and discovery",
+                "Stakeholder communication",
+                "Data-driven decision making"
             );
-            public final java.util.List<String> skills = java.util.List.of(
-                "Data Analysis", "Project Management", "Communication"
+            public final java.util.List<String> strengths = java.util.List.of(
+                "Strong communication and storytelling",
+                "Experience collaborating with cross-functional teams",
+                "Comfortable with data and experimentation"
             );
-            public final String advice = "Focus on building foundational skills and consider entry-level positions that match your background.";
+            public final java.util.List<String> weaknesses = java.util.List.of(
+                "Limited experience owning P&L",
+                "Needs deeper exposure to enterprise-scale launches"
+            );
+            public final String careerDirection = "Consider Associate Product Manager or Business Analyst roles in tech or consulting to deepen ownership experience while leveraging your analytical strengths.";
+            public final Long id = 1L;
         });
         return "suggestions";
     }
 
-    @GetMapping({"/improve-score", "/improve"})
+    @GetMapping({"/improve-score", "/improve", "/improve.html"})
     public String showImproveScore(Model model) {
         // Placeholder data for improve score page
         model.addAttribute("entry", new Object() {
@@ -396,12 +405,16 @@ public class UiController {
                 "Advanced knowledge of cloud platforms (AWS/Azure)",
                 "Experience with agile methodologies"
             );
-            public final java.util.List<String> actions = java.util.List.of(
-                "Take online courses in cloud computing",
-                "Highlight any informal leadership roles in your CV",
-                "Gain certification in Scrum or Agile"
+            public final java.util.List<String> alignmentIssues = java.util.List.of(
+                "CV highlights individual contributor work; JD stresses team leadership",
+                "JD expects cloud platform depth; CV shows limited AWS/Azure exposure",
+                "Limited evidence of agile delivery metrics in recent roles"
             );
-            public final String strategicAdvice = "Consider targeting mid-level roles first to gain the required experience, or emphasize transferable skills from your current background.";
+            public final java.util.List<String> keywordSuggestions = java.util.List.of(
+                "Sprint planning", "AWS", "Azure", "Stakeholder management", "KPIs", "Roadmapping"
+            );
+            public final String achievementAdvice = "Reframe recent achievements with metrics (latency, revenue impact, cost savings). Add one example showing cross-team leadership and one cloud migration story.";
+            public final Long id = 1L;
         });
         return "improve";
     }
