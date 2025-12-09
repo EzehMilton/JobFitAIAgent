@@ -28,6 +28,8 @@ public class DashboardService {
 
     public void saveEntry(String role, String company, String jobDescription, int score) {
 
+        boolean showSuggestions = score < 40;
+        boolean showImproveScore = score >= 40 && score <= 74;
         boolean showUpgrade = score >= 75 && score <= 85;
         boolean showInterviewPrep = score > 85;
 
@@ -37,6 +39,8 @@ public class DashboardService {
                 .companyName(company)
                 .jobDescription(jobDescription)
                 .score(score)
+                .suggestionsAvailable(showSuggestions)
+                .improveScoreAvailable(showImproveScore)
                 .cvUpgradeAvailable(showUpgrade)
                 .interviewPrepAvailable(showInterviewPrep)
                 .createdAt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))

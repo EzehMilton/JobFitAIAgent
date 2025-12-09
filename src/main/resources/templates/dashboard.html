@@ -165,6 +165,8 @@
                         <td th:text="${entry.companyName}"></td>
                         <td th:text="${entry.score}"></td>
                         <td>
+                            <a th:if="${entry.suggestionsAvailable}" class="btn btn-sm btn-warning" href="/suggestions">Suggestions</a>
+                            <a th:if="${entry.improveScoreAvailable}" class="btn btn-sm btn-info" href="/improve-score">Improve Score</a>
                             <a th:if="${entry.cvUpgradeAvailable}" class="btn btn-sm btn-primary" href="/upgrade-cv">Tailor CV</a>
                             <a th:if="${entry.interviewPrepAvailable}" class="btn btn-sm btn-success" href="/interview-prep-guide">Get Ready</a>
                         </td>

@@ -25,8 +25,10 @@ public class DashboardEntry {
 
     private int score;
 
-    private boolean cvUpgradeAvailable;
-    private boolean interviewPrepAvailable;
+    private boolean suggestionsAvailable;        // for scores < 40
+    private boolean improveScoreAvailable;       // for scores 40-74
+    private boolean cvUpgradeAvailable;          // for scores 75-85
+    private boolean interviewPrepAvailable;      // for scores > 85
 
     private String createdAt;  // store as text for now, e.g. LocalDateTime.toString()
 }
