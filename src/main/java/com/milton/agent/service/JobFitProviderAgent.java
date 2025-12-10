@@ -28,54 +28,12 @@ public class JobFitProviderAgent {
 
     @Action
     public CvSkills extractSkillsFromCv(JobFitRequest request, OperationContext context) {
-        log.info("Extracting key skills from CV" );
-
-        String skillsExtractorPrompt = promptLoader.loadPrompt("skills-extractor.txt");
-        String cvText = request.CvText();
-        String prompt = skillsExtractorPrompt + "\n\nCV TEXT:\n" + cvText;
-
-
-        CvSkills cvSkills = context.ai()
-                .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_41_MINI)
-                        .withTemperature(0.1)
-                        .withTopP(0.90)
-                        .withFrequencyPenalty(0.0)
-                        .withPresencePenalty(0.0)
-                        .withMaxTokens(500)
-                )
-                .createObject(prompt,
-                        CvSkills.class);
-
-        Assert.notNull(cvSkills, "CV skills cannot be null");
-        log.info("Skills extracted from CV");
-        return cvSkills;
+        return extractCvSkills(request.CvText(), context, "");
     }
 
     @Action
     public JobRequirements extractJobRequirements(JobFitRequest request, OperationContext context) {
-        log.info("Extracting a list of key requirements from job description");
-
-        String jobDescriptionPrompt = promptLoader.loadPrompt("job-description-extractor.txt");
-
-        String prompt =
-                jobDescriptionPrompt + "\n\nJOB DESCRIPTION:\n" +
-                        (request.JobDescription() == null ? "" : request.JobDescription());
-
-        JobRequirements requirements = context.ai()
-                .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_41_MINI)
-                        .withTemperature(0.2)
-                        .withTopP(0.90)
-                        .withFrequencyPenalty(0.0)
-                        .withPresencePenalty(0.0)
-                        .withMaxTokens(600)
-                )
-                .createObject(prompt, JobRequirements.class);
-
-        Assert.notNull(requirements, "Job requirements cannot be null");
-        log.info("Job requirements extracted from pasted requirements");
-        return requirements;
+        return extractJobRequirements(request.JobDescription(), context, " from job description");
     }
 
 
@@ -159,50 +117,12 @@ public class JobFitProviderAgent {
 
     @Action
     public CvSkills extractSkillsForSuggestions(SuggestionsRequest request, OperationContext context) {
-        log.info("Extracting key skills from CV for suggestions");
-
-        String skillsExtractorPrompt = promptLoader.loadPrompt("skills-extractor.txt");
-        String cvText = request.candidateCv();
-        String prompt = skillsExtractorPrompt + "\n\nCV TEXT:\n" + cvText;
-
-        CvSkills cvSkills = context.ai()
-                .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_41_MINI)
-                        .withTemperature(0.1)
-                        .withTopP(0.90)
-                        .withFrequencyPenalty(0.0)
-                        .withPresencePenalty(0.0)
-                        .withMaxTokens(500)
-                )
-                .createObject(prompt, CvSkills.class);
-
-        Assert.notNull(cvSkills, "CV skills cannot be null");
-        log.info("Skills extracted from CV for suggestions");
-        return cvSkills;
+        return extractCvSkills(request.candidateCv(), context, " for suggestions");
     }
 
     @Action
     public JobRequirements extractRequirementsForSuggestions(SuggestionsRequest request, OperationContext context) {
-        log.info("Extracting job requirements for suggestions");
-
-        String jobDescriptionPrompt = promptLoader.loadPrompt("job-description-extractor.txt");
-        String prompt = jobDescriptionPrompt + "\n\nJOB DESCRIPTION:\n" +
-                (request.jobDescription() == null ? "" : request.jobDescription());
-
-        JobRequirements requirements = context.ai()
-                .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_41_MINI)
-                        .withTemperature(0.2)
-                        .withTopP(0.90)
-                        .withFrequencyPenalty(0.0)
-                        .withPresencePenalty(0.0)
-                        .withMaxTokens(600)
-                )
-                .createObject(prompt, JobRequirements.class);
-
-        Assert.notNull(requirements, "Job requirements cannot be null");
-        log.info("Job requirements extracted for suggestions");
-        return requirements;
+        return extractJobRequirements(request.jobDescription(), context, " for suggestions");
     }
 
     @AchievesGoal(description = "Generates improvement recommendations for candidates with moderate fit scores (40-74%)")
@@ -238,50 +158,12 @@ public class JobFitProviderAgent {
 
     @Action
     public CvSkills extractSkillsForImprove(ImproveScoreRequest request, OperationContext context) {
-        log.info("Extracting key skills from CV for improve score");
-
-        String skillsExtractorPrompt = promptLoader.loadPrompt("skills-extractor.txt");
-        String cvText = request.candidateCv();
-        String prompt = skillsExtractorPrompt + "\n\nCV TEXT:\n" + cvText;
-
-        CvSkills cvSkills = context.ai()
-                .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_41_MINI)
-                        .withTemperature(0.1)
-                        .withTopP(0.90)
-                        .withFrequencyPenalty(0.0)
-                        .withPresencePenalty(0.0)
-                        .withMaxTokens(500)
-                )
-                .createObject(prompt, CvSkills.class);
-
-        Assert.notNull(cvSkills, "CV skills cannot be null");
-        log.info("Skills extracted from CV for improve score");
-        return cvSkills;
+        return extractCvSkills(request.candidateCv(), context, " for improve score");
     }
 
     @Action
     public JobRequirements extractRequirementsForImprove(ImproveScoreRequest request, OperationContext context) {
-        log.info("Extracting job requirements for improve score");
-
-        String jobDescriptionPrompt = promptLoader.loadPrompt("job-description-extractor.txt");
-        String prompt = jobDescriptionPrompt + "\n\nJOB DESCRIPTION:\n" +
-                (request.jobDescription() == null ? "" : request.jobDescription());
-
-        JobRequirements requirements = context.ai()
-                .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_41_MINI)
-                        .withTemperature(0.2)
-                        .withTopP(0.90)
-                        .withFrequencyPenalty(0.0)
-                        .withPresencePenalty(0.0)
-                        .withMaxTokens(600)
-                )
-                .createObject(prompt, JobRequirements.class);
-
-        Assert.notNull(requirements, "Job requirements cannot be null");
-        log.info("Job requirements extracted for improve score");
-        return requirements;
+        return extractJobRequirements(request.jobDescription(), context, " for improve score");
     }
 
     @AchievesGoal(description = "Generates interview preparation content for candidates with excellent fit scores (>85%)")
@@ -317,11 +199,19 @@ public class JobFitProviderAgent {
 
     @Action
     public CvSkills extractSkillsForInterviewPrep(InterviewPrepRequest request, OperationContext context) {
-        log.info("Extracting key skills from CV for interview prep");
+        return extractCvSkills(request.candidateCv(), context, " for interview prep");
+    }
+
+    @Action
+    public JobRequirements extractRequirementsForInterviewPrep(InterviewPrepRequest request, OperationContext context) {
+        return extractJobRequirements(request.jobDescription(), context, " for interview prep");
+    }
+
+    private CvSkills extractCvSkills(String cvText, OperationContext context, String logSuffix) {
+        log.info("Extracting key skills from CV{}", logSuffix);
 
         String skillsExtractorPrompt = promptLoader.loadPrompt("skills-extractor.txt");
-        String cvText = request.candidateCv();
-        String prompt = skillsExtractorPrompt + "\n\nCV TEXT:\n" + cvText;
+        String prompt = skillsExtractorPrompt + "\n\nCV TEXT:\n" + (cvText == null ? "" : cvText);
 
         CvSkills cvSkills = context.ai()
                 .withLlm(LlmOptions
@@ -335,17 +225,16 @@ public class JobFitProviderAgent {
                 .createObject(prompt, CvSkills.class);
 
         Assert.notNull(cvSkills, "CV skills cannot be null");
-        log.info("Skills extracted from CV for interview prep");
+        log.info("Skills extracted from CV{}", logSuffix);
         return cvSkills;
     }
 
-    @Action
-    public JobRequirements extractRequirementsForInterviewPrep(InterviewPrepRequest request, OperationContext context) {
-        log.info("Extracting job requirements for interview prep");
+    private JobRequirements extractJobRequirements(String jobDescription, OperationContext context, String logSuffix) {
+        log.info("Extracting job requirements{}", logSuffix);
 
         String jobDescriptionPrompt = promptLoader.loadPrompt("job-description-extractor.txt");
         String prompt = jobDescriptionPrompt + "\n\nJOB DESCRIPTION:\n" +
-                (request.jobDescription() == null ? "" : request.jobDescription());
+                (jobDescription == null ? "" : jobDescription);
 
         JobRequirements requirements = context.ai()
                 .withLlm(LlmOptions
@@ -359,7 +248,7 @@ public class JobFitProviderAgent {
                 .createObject(prompt, JobRequirements.class);
 
         Assert.notNull(requirements, "Job requirements cannot be null");
-        log.info("Job requirements extracted for interview prep");
+        log.info("Job requirements extracted{}", logSuffix);
         return requirements;
     }
 }

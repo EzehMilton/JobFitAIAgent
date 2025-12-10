@@ -15,7 +15,7 @@ Key Capabilities
 Architecture Overview
 ---------------------
 The app is split into three layers:
-1. **Controllers** – `UiController` powers the Thymeleaf pages and AJAX submission, while `JobFitProviderController` exposes the REST `/score` endpoint.
+1. **Controllers** – UI responsibilities are split across focused controllers (`AnalysisController`, `UpgradeCvController`, `RecommendationsController`, `NavigationController`), while `JobFitProviderController` exposes the REST `/score` endpoint.
 2. **Agents** – `JobFitProviderAgent` (prod profile) and `MockJobFitProviderAgent` (dev profile) define the Embabel agent actions for extracting CV skills, extracting job requirements, computing the fit score, and rewriting CVs.
 3. **Services & Utilities** – `RateLimitService`, `TextExtractor` (PDF text extraction), and helper utilities manage IP limits, file validation, IP lookup, etc.
 
@@ -111,13 +111,19 @@ Project Structure
 ```
 src/main/java/com/milton/agent/
 ├── controller/
-│   ├── UiController.java              # Web routes (/generate, /upgrade-cv, /clear-cv)
+│   ├── AnalysisController.java        # Home page + score generation
+│   ├── UpgradeCvController.java       # CV upgrade flow + downloads
+│   ├── RecommendationsController.java # Suggestions, improve, and interview prep pages
+│   ├── NavigationController.java      # Login/register/dashboard navigation
+│   ├── SessionController.java         # Session management endpoints
 │   └── JobFitProviderController.java  # REST /score endpoint
 ├── service/
 │   ├── JobFitProviderAgent.java       # Production Embabel agent
 │   ├── MockJobFitProviderAgent.java   # Dev agent with hard-coded responses
 │   ├── RateLimitService.java          # 10 scans/day rate limiter
-│   └── TextExtractor.java             # PDF text extraction abstraction
+│   ├── TextExtractor.java             # PDF text extraction abstraction
+│   ├── PdfService.java                # PDF rendering + download naming
+│   └── MatchPresentationService.java  # Score display helpers
 ├── models/                            # Records such as FitScore, JobFitRequest, etc.
 └── config/prompts/                    # Prompt templates used by each agent action
 ```
