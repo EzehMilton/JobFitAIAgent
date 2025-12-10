@@ -4,16 +4,24 @@ import com.embabel.agent.api.annotation.Agent;
 import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.AchievesGoal;
 import com.embabel.agent.api.common.OperationContext;
+import com.milton.agent.models.CareerSuggestions;
 import com.milton.agent.models.CvRewriteRequest;
 import com.milton.agent.models.CvSkills;
 import com.milton.agent.models.FitScore;
+import com.milton.agent.models.ImproveScore;
+import com.milton.agent.models.ImproveScoreRequest;
 import com.milton.agent.models.JobFitRequest;
 import com.milton.agent.models.JobRequirements;
+import com.milton.agent.models.InterviewPrep;
+import com.milton.agent.models.InterviewPrepRequest;
+import com.milton.agent.models.SuggestionsRequest;
 import com.milton.agent.models.UpgradedCv;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Profile("dev")
@@ -23,6 +31,9 @@ import java.util.List;
         version = "1.0.0"
 )
 public class MockJobFitProviderAgent {
+
+    private static final int[] CATEGORICAL_SCORES = new int[]{35, 60, 80, 95};
+    private static final AtomicInteger SCORE_CURSOR = new AtomicInteger(0);
 
     @Action
     public CvSkills extractSkillsFromCv(JobFitRequest request, OperationContext context) {
@@ -50,15 +61,16 @@ public class MockJobFitProviderAgent {
     @Action
     public FitScore calculateFitScore(JobFitRequest request, CvSkills cvSkills, JobRequirements jobRequirements, OperationContext context) {
         log.info("[DEV MOCK] Returning mock fit score");
-        return new FitScore(
-                78,
-                """
-                Mocked explanation:
-                • Strong overlap on Java and Spring Boot.
-                • Missing exposure to AWS and microservices depth.
-                • Overall good fit with room for growth.
-                """
-        );
+
+        int score = nextRotatingScore();
+        String explanation = switch (score) {
+            case 35 -> "Weak match: Limited overlap with leadership and cloud requirements; highlight transferable projects.";
+            case 60 -> "Partial match: Solid backend fundamentals but gaps in cloud depth and team leadership.";
+            case 80 -> "Good match: Strong alignment on Java/Spring; add examples of scaling and AWS usage to strengthen.";
+            default -> "Excellent match: Clear overlap with required stack and leadership; ensure achievements stay quantified.";
+        };
+
+        return new FitScore(score, explanation);
     }
 
     @AchievesGoal(description = "Mocked CV rewrite for dev mode")
@@ -98,5 +110,97 @@ public class MockJobFitProviderAgent {
                 List.of("ATS optimisation", "Generative AI", "Stakeholder alignment", "Experiment design"),
                 "Emphasised AI-enabled hiring impact, highlighted ATS optimisation wins, and tightened bullet outcomes."
         );
+    }
+
+    @AchievesGoal(description = "Mocked career suggestions for low-score entries")
+    @Action
+    public CareerSuggestions generateCareerSuggestions(SuggestionsRequest request,
+                                                       CvSkills cvSkills,
+                                                       JobRequirements jobRequirements,
+                                                       OperationContext context) {
+        log.info("[DEV MOCK] Returning mock career suggestions");
+        return new CareerSuggestions(
+                List.of("Associate Product Manager", "Business Analyst", "Product Ops Specialist"),
+                List.of("Product discovery basics", "Stakeholder communication", "Data storytelling"),
+                List.of("Clear communication", "Comfort with data", "Cross-functional collaboration"),
+                List.of("Limited launch ownership", "Shallow cloud exposure"),
+                "Target associate/analyst roles in tech or consulting while building launch and cloud experience through side projects and certifications."
+        );
+    }
+
+    @Action
+    public CvSkills extractSkillsForSuggestions(SuggestionsRequest request, OperationContext context) {
+        log.info("[DEV MOCK] Returning mock skills for suggestions");
+        return extractSkillsFromCv(null, context);
+    }
+
+    @Action
+    public JobRequirements extractRequirementsForSuggestions(SuggestionsRequest request, OperationContext context) {
+        log.info("[DEV MOCK] Returning mock job requirements for suggestions");
+        return extractJobRequirements(null, context);
+    }
+
+    @AchievesGoal(description = "Mocked improvement recommendations for mid scores")
+    @Action
+    public ImproveScore generateImproveScore(ImproveScoreRequest request,
+                                             CvSkills cvSkills,
+                                             JobRequirements jobRequirements,
+                                             OperationContext context) {
+        log.info("[DEV MOCK] Returning mock improve score data");
+        return new ImproveScore(
+                List.of("Add concrete leadership examples", "Show cloud migration involvement", "Quantify delivery outcomes"),
+                List.of("CV lacks agile delivery metrics", "JD stresses AWS depth"),
+                List.of("AWS", "Stakeholder management", "Roadmapping"),
+                List.of("AWS Certified Cloud Practitioner", "Scrum.org PSM I", "Udacity Cloud DevOps Nanodegree"),
+                "Rewrite achievements with metrics, add a cloud-focused project, and weave in agile ceremonies you lead."
+        );
+    }
+
+    @Action
+    public CvSkills extractSkillsForImprove(ImproveScoreRequest request, OperationContext context) {
+        log.info("[DEV MOCK] Returning mock skills for improve");
+        return extractSkillsFromCv(null, context);
+    }
+
+    @Action
+    public JobRequirements extractRequirementsForImprove(ImproveScoreRequest request, OperationContext context) {
+        log.info("[DEV MOCK] Returning mock requirements for improve");
+        return extractJobRequirements(null, context);
+    }
+
+    @AchievesGoal(description = "Mocked interview prep for high scores")
+    @Action
+    public InterviewPrep generateInterviewPrep(InterviewPrepRequest request,
+                                               CvSkills cvSkills,
+                                               JobRequirements jobRequirements,
+                                               OperationContext context) {
+        log.info("[DEV MOCK] Returning mock interview prep");
+        return new InterviewPrep(
+                "I lead backend teams to ship scalable services; excited to bring my Java/Spring and leadership chops here.",
+                List.of("Describe a time you improved service reliability.", "How do you mentor juniors?", "Tell us about a difficult stakeholder."),
+                List.of("Reduced API latency by 30% with caching", "Led migration to AWS", "Introduced code review guild"),
+                "Review the company's stack, prepare STAR stories on scale/reliability, and draft thoughtful questions on team culture."
+        );
+    }
+
+    @Action
+    public CvSkills extractSkillsForInterviewPrep(InterviewPrepRequest request, OperationContext context) {
+        log.info("[DEV MOCK] Returning mock skills for interview prep");
+        return extractSkillsFromCv(null, context);
+    }
+
+    @Action
+    public JobRequirements extractRequirementsForInterviewPrep(InterviewPrepRequest request, OperationContext context) {
+        log.info("[DEV MOCK] Returning mock requirements for interview prep");
+        return extractJobRequirements(null, context);
+    }
+
+    private int nextRotatingScore() {
+        int idx = Math.abs(SCORE_CURSOR.getAndIncrement() % CATEGORICAL_SCORES.length);
+        // Add small jitter within band to avoid identical repeats
+        int base = CATEGORICAL_SCORES[idx];
+        int jitter = ThreadLocalRandom.current().nextInt(-2, 3);
+        int candidate = Math.max(0, Math.min(100, base + jitter));
+        return candidate;
     }
 }
