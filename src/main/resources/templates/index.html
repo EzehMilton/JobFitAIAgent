@@ -741,6 +741,9 @@
                         <a href="/register" class="fw-semibold ms-3" style="text-decoration: none; color: #2d3748;">
                             <i class="fas fa-user-plus me-1"></i> Register
                         </a>
+                        <a href="/dashboard" class="fw-semibold ms-3" style="text-decoration: none; color: #2d3748;">
+                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                        </a>
                     </div>
                     <div th:if="${error}" class="alert alert-danger" role="alert">
                         <i class="fas fa-exclamation-circle me-2"></i>
@@ -955,8 +958,8 @@
 <!-- Loading overlay with progress bar -->
 <div id="loadingOverlay" class="loading-overlay d-none" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="loading-content">
-        <h3>Analysis in Progress</h3>
-        <p>Your CV and the job description are being analyzed. It may take up to a minute or more. Please don’t close this window. Your report is just moments away.</p>
+        <h3>Your Score Is in Progress!</h3>
+        <p>We’re matching your CV to the role with precision. This may take a moment, feel free to grab a coffee while we prepare your score.</p>
 
         <div class="progress mb-3" style="height: 20px;">
             <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
@@ -964,7 +967,6 @@
                  style="width: 0%"></div>
         </div>
         <p class="text-muted" id="progressLabel">Starting…</p>
-        <p><em>Tip: Feel free to grab a coffee.</em></p>
     </div>
 </div>
 

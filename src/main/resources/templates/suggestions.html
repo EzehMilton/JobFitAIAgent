@@ -2,94 +2,169 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Suggestions – JobFit</title>
+    <title>Career Suggestions – JobFit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
     <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --card-shadow: 0 12px 35px rgba(0,0,0,.12);
-        }
         body {
-            background: var(--primary-gradient);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 2rem 1rem;
+            font-family: "Inter", "Segoe UI", sans-serif;
         }
-        .action-card {
-            background: #fff;
-            border-radius: 22px;
+
+        .suggest-card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .suggest-card__header {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: #fff;
             padding: 2rem;
-            box-shadow: var(--card-shadow);
-            max-width: 850px;
-            margin: auto;
         }
-        h1 {
-            font-size: 1.8rem;
+
+        .suggest-card__header h1 {
+            font-size: 1.75rem;
             font-weight: 700;
+            margin-bottom: 0.25rem;
         }
-        .section-title {
+
+        .suggest-card__header p {
+            margin: 0;
+            font-weight: 500;
+            opacity: .9;
+        }
+
+        .suggest-card__body {
+            padding: 2rem;
+            background: #f8fafc;
+        }
+
+        .insight-block {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .insight-block h2 {
+            font-size: 1.1rem;
             font-weight: 700;
-            margin-top: 1.5rem;
             margin-bottom: .75rem;
-            color: #4a4a4a;
+            color: #4a5568;
+        }
+
+        .insight-block ul {
+            padding-left: 1.3rem;
+        }
+
+        .insight-block ul li {
+            margin-bottom: .4rem;
+            color: #2d3748;
+        }
+
+        .suggest-card__footer {
+            padding: 1.75rem 2rem 2rem;
+            background: #ffffff;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        @media (max-width: 576px) {
+            .suggest-card__footer {
+                justify-content: center;
+            }
         }
     </style>
 </head>
 
 <body>
-<div class="action-card">
 
-    <h1><i class="fas fa-compass me-2"></i> Suggestions for Your Career Direction</h1>
-    <p class="text-muted">Based on your score, we analysed patterns in your CV and job description.</p>
+<main class="suggest-card" role="main">
 
-    <!-- Job Title Suggestions -->
-    <div>
-        <div class="section-title"><i class="fas fa-briefcase me-2"></i>Recommended Job Titles</div>
-        <ul>
-            <li th:each="title : ${entry.suggestedTitles}" th:text="${title}"></li>
-        </ul>
-    </div>
+    <!-- HEADER -->
+    <header class="suggest-card__header">
+        <h1><i class="fas fa-compass me-2"></i>Career Suggestions</h1>
+        <p>Personalised direction based on your JobFit score.</p>
+    </header>
 
-    <!-- Skills -->
-    <div>
-        <div class="section-title"><i class="fas fa-layer-group me-2"></i>Skill Clusters</div>
-        <ul>
-            <li th:each="skill : ${entry.skillClusters}" th:text="${skill}"></li>
-        </ul>
-    </div>
+    <!-- BODY -->
+    <section class="suggest-card__body">
 
-    <!-- Strengths -->
-    <div>
-        <div class="section-title"><i class="fas fa-thumbs-up me-2"></i>Your Strengths</div>
-        <ul>
-            <li th:each="s : ${entry.strengths}" th:text="${s}"></li>
-        </ul>
-    </div>
+        <!-- Recommended Titles -->
+        <div class="insight-block">
+            <h2><i class="fas fa-briefcase me-2"></i>Recommended Job Titles</h2>
+            <ul>
+                <li th:each="t : ${entry.suggestedTitles}" th:text="${t}"></li>
+            </ul>
+        </div>
 
-    <!-- Weaknesses -->
-    <div>
-        <div class="section-title"><i class="fas fa-triangle-exclamation me-2"></i>Areas to Improve</div>
-        <ul>
-            <li th:each="w : ${entry.weaknesses}" th:text="${w}"></li>
-        </ul>
-    </div>
+        <!-- Skill Clusters -->
+        <div class="insight-block">
+            <h2><i class="fas fa-layer-group me-2"></i>Skill Clusters</h2>
+            <ul>
+                <li th:each="s : ${entry.skillClusters}" th:text="${s}"></li>
+            </ul>
+        </div>
 
-    <!-- Career Direction -->
-    <div>
-        <div class="section-title"><i class="fas fa-map-signs me-2"></i>Career Direction</div>
-        <p th:text="${entry.careerDirection}"></p>
-    </div>
+        <!-- Strengths -->
+        <div class="insight-block">
+            <h2><i class="fas fa-thumbs-up me-2"></i>Your Strengths</h2>
+            <ul>
+                <li th:each="st : ${entry.strengths}" th:text="${st}"></li>
+            </ul>
+        </div>
 
-    <!-- Buttons -->
-    <div class="mt-4 d-flex gap-2">
-        <a class="btn btn-secondary" href="/dashboard"><i class="fas fa-arrow-left me-1"></i> Back</a>
-        <a class="btn btn-primary" th:href="@{'/dashboard/action/' + ${entry.id} + '/download'}">
+        <!-- Weaknesses -->
+        <div class="insight-block">
+            <h2><i class="fas fa-triangle-exclamation me-2"></i>Areas to Improve</h2>
+            <ul>
+                <li th:each="w : ${entry.weaknesses}" th:text="${w}"></li>
+            </ul>
+        </div>
+
+        <!-- Career Direction Summary -->
+        <div class="insight-block">
+            <h2><i class="fas fa-map-signs me-2"></i>Career Direction</h2>
+            <p th:text="${entry.careerDirection}"></p>
+        </div>
+
+    </section>
+
+    <!-- FOOTER BUTTONS -->
+    <footer class="suggest-card__footer">
+        <a class="btn btn-outline-secondary" href="/dashboard">
+            <i class="fas fa-arrow-left me-1"></i> Back
+        </a>
+        <a class="btn btn-primary-gradient"
+           th:href="@{'/suggestions/' + ${entry.id} + '/download'}">
             <i class="fas fa-file-download me-1"></i> Download PDF
         </a>
-    </div>
+    </footer>
 
-</div>
+</main>
+
 </body>
 </html>

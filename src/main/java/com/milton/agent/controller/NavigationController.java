@@ -20,7 +20,11 @@ public class NavigationController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        model.addAttribute("entries", dashboardService.getAllEntries());
+        var entries = dashboardService.getAllEntries();
+        model.addAttribute("entries", entries);
+        model.addAttribute("totalAnalyses", dashboardService.getTotalAnalyses(entries));
+        model.addAttribute("bestScore", dashboardService.getBestScoreLabel(entries));
+        model.addAttribute("lastActivity", dashboardService.getLastActivityLabel(entries));
         return "dashboard";
     }
 

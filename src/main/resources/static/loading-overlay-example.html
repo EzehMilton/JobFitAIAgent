@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Overlay Example - JobFit</title>
+
+    <!-- Bootstrap (if using Bootstrap in your project) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Include the reusable loading overlay CSS -->
+    <link rel="stylesheet" href="/css/loading-overlay.css">
+
+    <style>
+        body {
+            padding: 3rem 1rem;
+        }
+        .demo-section {
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="demo-section">
+    <h1>Loading Overlay Usage Examples</h1>
+    <p class="text-muted">Click the buttons below to see the loading overlay in action.</p>
+
+    <div class="mt-4">
+        <h3>Example 1: Manual Control</h3>
+        <p>Show and hide the overlay programmatically:</p>
+        <button id="showBtn" class="btn btn-primary">Show Loading Overlay</button>
+        <button id="hideBtn" class="btn btn-secondary">Hide Loading Overlay</button>
+    </div>
+
+    <div class="mt-4">
+        <h3>Example 2: Custom Messages</h3>
+        <p>Show the overlay with custom title and message:</p>
+        <button id="customBtn" class="btn btn-info">Show Custom Message</button>
+    </div>
+
+    <div class="mt-4">
+        <h3>Example 3: Auto-attach to Buttons</h3>
+        <p>Automatically show overlay when clicking navigation links:</p>
+        <a href="/suggestions" class="btn btn-warning action-btn">Go to Suggestions</a>
+        <a href="/improve" class="btn btn-success action-btn">Go to Improve</a>
+    </div>
+
+    <div class="mt-5 p-3 bg-light rounded">
+        <h4>How to Use in Your Pages</h4>
+        <pre><code>&lt;!-- 1. Include the CSS --&gt;
+&lt;link rel="stylesheet" href="/css/loading-overlay.css"&gt;
+
+&lt;!-- 2. Add the overlay HTML (before closing body tag) --&gt;
+&lt;div id="loadingOverlay" class="loading-overlay"&gt;
+    &lt;div class="loading-content"&gt;
+        &lt;div class="loading-spinner"&gt;&lt;/div&gt;
+        &lt;h4&gt;Action In Progress...&lt;/h4&gt;
+        &lt;p&gt;This may take up to 1 minute.&lt;br&gt;Please don't close this window.&lt;/p&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- 3. Include the JavaScript --&gt;
+&lt;script src="/js/loading-overlay.js"&gt;&lt;/script&gt;
+
+&lt;!-- 4. Use the LoadingOverlay API --&gt;
+&lt;script&gt;
+    // Automatically attach to all action buttons
+    LoadingOverlay.attachToButtons('.action-btn');
+
+    // Or attach to a specific button with custom message
+    LoadingOverlay.attachToButton(
+        document.getElementById('myButton'),
+        'Processing...',
+        'Please wait while we process your request.'
+    );
+
+    // Or manually control
+    LoadingOverlay.show();  // Show with default message
+    LoadingOverlay.hide();  // Hide the overlay
+&lt;/script&gt;</code></pre>
+    </div>
+</div>
+
+<!-- Loading Overlay HTML (Required) -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <h4>Action In Progress...</h4>
+        <p>This may take up to 1 minute.<br>Please don't close this window.</p>
+    </div>
+</div>
+
+<!-- Include the reusable loading overlay JavaScript -->
+<script src="/js/loading-overlay.js"></script>
+
+<!-- Demo-specific JavaScript -->
+<script>
+    // Example 1: Manual show/hide
+    document.getElementById('showBtn').addEventListener('click', function() {
+        LoadingOverlay.show();
+    });
+
+    document.getElementById('hideBtn').addEventListener('click', function() {
+        LoadingOverlay.hide();
+    });
+
+    // Example 2: Custom messages
+    document.getElementById('customBtn').addEventListener('click', function() {
+        LoadingOverlay.show(
+            'Processing Your Request...',
+            'This might take a few moments.<br>Thank you for your patience.'
+        );
+
+        // Auto-hide after 3 seconds for demo purposes
+        setTimeout(() => LoadingOverlay.hide(), 3000);
+    });
+
+    // Example 3: Auto-attach to action buttons
+    LoadingOverlay.attachToButtons('.action-btn');
+</script>
+
+</body>
+</html>

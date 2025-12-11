@@ -94,6 +94,54 @@
             text-decoration: none;
             color: #667eea;
         }
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+        .loading-content {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+        }
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #e0e7ff;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-content h4 {
+            color: #2d3748;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+        .loading-content p {
+            color: #718096;
+            margin: 0;
+            line-height: 1.6;
+        }
     </style>
 </head>
 
@@ -121,15 +169,15 @@
                 <div class="col-md-4">
                     <div class="stat-tile">
                         <h5><i class="fas fa-star me-2 text-warning"></i>Best Score</h5>
-                        <div class="stat-value" th:text="${bestScore}">—</div>
+                        <div class="stat-value" th:text="${bestScore != null ? bestScore : '—'}">—</div>
                         <div class="text-muted small">Highest match achieved</div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="stat-tile">
                         <h5><i class="fas fa-clock me-2 text-success"></i>Last Activity</h5>
-                        <div class="stat-value small" th:text="${lastActivity}">—</div>
-                        <div class="text-muted small">Keep momentum going</div>
+                        <div class="stat-value small" th:text="${lastActivity != null ? lastActivity : '—'}">—</div>
+                        <div class="text-muted small" th:text="${lastActivity != null ? lastActivity : 'Run your first analysis'}">Today at 08:04</div>
                     </div>
                 </div>
             </div>
@@ -165,10 +213,10 @@
                         <td th:text="${entry.companyName}"></td>
                         <td th:text="${entry.score}"></td>
                         <td>
-                            <a th:if="${entry.suggestionsAvailable}" class="btn btn-sm btn-warning" th:href="@{'/suggestions/' + ${entry.id}}">Suggestions</a>
-                            <a th:if="${entry.improveScoreAvailable}" class="btn btn-sm btn-info" th:href="@{'/improve-score/' + ${entry.id}}">Improve Score</a>
-                            <a th:if="${entry.cvUpgradeAvailable}" class="btn btn-sm btn-primary" th:href="@{/upgrade_cv.html}">Tailor CV</a>
-                            <a th:if="${entry.interviewPrepAvailable}" class="btn btn-sm btn-success" th:href="@{'/get-ready/' + ${entry.id}}">Get Ready</a>
+                            <a th:if="${entry.suggestionsAvailable}" class="btn btn-sm btn-warning action-btn" data-action="suggestions" th:href="@{'/suggestions/' + ${entry.id}}">Suggestions</a>
+                            <a th:if="${entry.improveScoreAvailable}" class="btn btn-sm btn-info action-btn" data-action="improve" th:href="@{'/improve-score/' + ${entry.id}}">Improve Score</a>
+                            <a th:if="${entry.cvUpgradeAvailable}" class="btn btn-sm btn-primary action-btn" data-action="upgrade" th:href="@{/upgrade_cv.html}">Tailor CV</a>
+                            <a th:if="${entry.interviewPrepAvailable}" class="btn btn-sm btn-success action-btn" data-action="getready" th:href="@{'/get-ready/' + ${entry.id}}">Get Ready</a>
                         </td>
                     </tr>
                     </tbody>
@@ -179,6 +227,33 @@
         </div>
     </div>
 </div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <h4>Action In Progress...</h4>
+        <p>This may take up to 1 minute.<br>Please don't close this window.</p>
+    </div>
+</div>
+
+<script>
+    // Show loading overlay when action buttons are clicked
+    document.addEventListener('DOMContentLoaded', function() {
+        const overlay = document.getElementById('loadingOverlay');
+        const actionButtons = document.querySelectorAll('.action-btn');
+
+        actionButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Show overlay immediately
+                overlay.classList.add('active');
+
+                // Allow the navigation to proceed
+                // The overlay will naturally hide when the new page loads
+            });
+        });
+    });
+</script>
 
 </body>
 </html>

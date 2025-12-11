@@ -6,8 +6,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class DashboardService {
@@ -21,6 +25,8 @@ public class DashboardService {
     private final int cvUpgradeUpper;
     private final int interviewPrepThreshold;
 
+    private static final DateTimeFormatter STORED_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final DateTimeFormatter DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy, HH:mm");
     private static final int MAX_ROWS = 20;
     private static final Long DUMMY_USER_ID = 1L;
 
@@ -69,9 +75,96 @@ public class DashboardService {
                 .improveScoreAvailable(showImproveScore)
                 .cvUpgradeAvailable(showUpgrade)
                 .interviewPrepAvailable(showInterviewPrep)
-                .createdAt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                .createdAt(LocalDateTime.now().format(STORED_FORMATTER))
                 .build();
 
         repository.save(entry);
+    }
+
+    public int getTotalAnalyses(List<DashboardEntry> entries) {
+        return entries == null ? 0 : entries.size();
+    }
+
+    public Integer getBestScore(List<DashboardEntry> entries) {
+        return entries == null ? null : entries.stream()
+                .map(DashboardEntry::getScore)
+                .max(Integer::compareTo)
+                .orElse(null);
+    }
+
+    public String getBestScoreLabel(List<DashboardEntry> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return null;
+        }
+
+        return entries.stream()
+                .max((a, b) -> Integer.compare(a.getScore(), b.getScore()))
+                .map(this::formatBestScore)
+                .orElse(null);
+    }
+
+    public String getLastActivityLabel(List<DashboardEntry> entries) {
+        Optional<LocalDateTime> latest = getLatestTimestamp(entries);
+        if (latest.isEmpty()) {
+            return null;
+        }
+
+        LocalDateTime latestTime = latest.get();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
+
+        if (latestTime.toLocalDate().isEqual(now.toLocalDate())) {
+            return "Today at " + latestTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+        }
+
+        if (latestTime.toLocalDate().isEqual(now.toLocalDate().minusDays(1))) {
+            return "Yesterday at " + latestTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+        }
+
+        return latestTime.format(DISPLAY_FORMATTER);
+    }
+
+    private Optional<LocalDateTime> getLatestTimestamp(List<DashboardEntry> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return entries.stream()
+                .map(DashboardEntry::getCreatedAt)
+                .map(this::parseCreatedAt)
+                .filter(Objects::nonNull)
+                .max(LocalDateTime::compareTo);
+    }
+
+    private LocalDateTime parseCreatedAt(String createdAt) {
+        if (createdAt == null || createdAt.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(createdAt, STORED_FORMATTER);
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
+    }
+
+    private String formatBestScore(DashboardEntry entry) {
+        StringBuilder label = new StringBuilder();
+        label.append(entry.getScore()).append("%");
+
+        String role = entry.getRoleTitle();
+        String company = entry.getCompanyName();
+        if ((role != null && !role.isBlank()) || (company != null && !company.isBlank())) {
+            label.append(" (");
+            if (role != null && !role.isBlank()) {
+                label.append(role.trim());
+            }
+            if (company != null && !company.isBlank()) {
+                if (role != null && !role.isBlank()) {
+                    label.append(" - ");
+                }
+                label.append(company.trim());
+            }
+            label.append(")");
+        }
+        return label.toString();
     }
 }
