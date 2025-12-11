@@ -176,8 +176,8 @@
                 <div class="col-md-4">
                     <div class="stat-tile">
                         <h5><i class="fas fa-clock me-2 text-success"></i>Last Activity</h5>
-                        <div class="stat-value small" th:text="${lastActivity}">—</div>
-                        <div class="text-muted small">Keep momentum going</div>
+                        <div class="stat-value small" th:text="${lastActivity != null ? lastActivity : '—'}">—</div>
+                        <div class="text-muted small" th:text="${lastActivity != null ? lastActivity : 'Run your first analysis'}">Today at 08:04</div>
                     </div>
                 </div>
             </div>
