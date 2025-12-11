@@ -92,6 +92,17 @@ public class DashboardService {
                 .orElse(null);
     }
 
+    public String getBestScoreLabel(List<DashboardEntry> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return null;
+        }
+
+        return entries.stream()
+                .max((a, b) -> Integer.compare(a.getScore(), b.getScore()))
+                .map(this::formatBestScore)
+                .orElse(null);
+    }
+
     public String getLastActivityLabel(List<DashboardEntry> entries) {
         Optional<LocalDateTime> latest = getLatestTimestamp(entries);
         if (latest.isEmpty()) {
@@ -133,5 +144,27 @@ public class DashboardService {
         } catch (DateTimeParseException ex) {
             return null;
         }
+    }
+
+    private String formatBestScore(DashboardEntry entry) {
+        StringBuilder label = new StringBuilder();
+        label.append(entry.getScore()).append("%");
+
+        String role = entry.getRoleTitle();
+        String company = entry.getCompanyName();
+        if ((role != null && !role.isBlank()) || (company != null && !company.isBlank())) {
+            label.append(" (");
+            if (role != null && !role.isBlank()) {
+                label.append(role.trim());
+            }
+            if (company != null && !company.isBlank()) {
+                if (role != null && !role.isBlank()) {
+                    label.append(" - ");
+                }
+                label.append(company.trim());
+            }
+            label.append(")");
+        }
+        return label.toString();
     }
 }

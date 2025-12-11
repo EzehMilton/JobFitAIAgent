@@ -169,7 +169,7 @@
                 <div class="col-md-4">
                     <div class="stat-tile">
                         <h5><i class="fas fa-star me-2 text-warning"></i>Best Score</h5>
-                        <div class="stat-value" th:text="${bestScore}">—</div>
+                        <div class="stat-value" th:text="${bestScore != null ? bestScore : '—'}">—</div>
                         <div class="text-muted small">Highest match achieved</div>
                     </div>
                 </div>
@@ -232,8 +232,8 @@
 <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-content">
         <div class="loading-spinner"></div>
-        <h4>Generating Your Results...</h4>
-        <p>This may take up to 30 seconds.<br>Please don't close this window.</p>
+        <h4>Action In Progress...</h4>
+        <p>This may take up to 1 minute.<br>Please don't close this window.</p>
     </div>
 </div>
 

@@ -56,8 +56,8 @@ const LoadingOverlay = (function() {
 
     /**
      * Show the loading overlay
-     * @param {string} title - Optional title text (default: "Generating Your Results...")
-     * @param {string} message - Optional message text (default: "This may take up to 30 seconds...")
+     * @param {string} title - Optional title text (default: "Action In Progress...")
+     * @param {string} message - Optional message text (default: "This may take up to 1 minute...")
      */
     function show(title, message) {
         init();

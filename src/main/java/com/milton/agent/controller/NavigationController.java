@@ -23,7 +23,7 @@ public class NavigationController {
         var entries = dashboardService.getAllEntries();
         model.addAttribute("entries", entries);
         model.addAttribute("totalAnalyses", dashboardService.getTotalAnalyses(entries));
-        model.addAttribute("bestScore", dashboardService.getBestScore(entries));
+        model.addAttribute("bestScore", dashboardService.getBestScoreLabel(entries));
         model.addAttribute("lastActivity", dashboardService.getLastActivityLabel(entries));
         return "dashboard";
     }

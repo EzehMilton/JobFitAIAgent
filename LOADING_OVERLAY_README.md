@@ -116,8 +116,8 @@ To add the loading overlay to other pages, follow these steps:
 <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-content">
         <div class="loading-spinner"></div>
-        <h4>Generating Your Results...</h4>
-        <p>This may take up to 30 seconds.<br>Please don't close this window.</p>
+        <h4>Action In Progress...</h4>
+        <p>This may take up to 1 minute.<br>Please don't close this window.</p>
     </div>
 </div>
 ```
@@ -155,8 +155,8 @@ To add the loading overlay to other pages, follow these steps:
 <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-content">
         <div class="loading-spinner"></div>
-        <h4>Generating Your Results...</h4>
-        <p>This may take up to 30 seconds.<br>Please don't close this window.</p>
+        <h4>Action In Progress...</h4>
+        <p>This may take up to 1 minute.<br>Please don't close this window.</p>
     </div>
 </div>
 ```
