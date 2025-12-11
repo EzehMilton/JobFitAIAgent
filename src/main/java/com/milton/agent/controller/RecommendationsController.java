@@ -10,9 +10,15 @@ import com.milton.agent.models.InterviewPrep;
 import com.milton.agent.models.InterviewPrepRequest;
 import com.milton.agent.models.SuggestionsRequest;
 import com.milton.agent.service.DashboardService;
+import com.milton.agent.service.PdfService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -30,6 +37,7 @@ public class RecommendationsController {
 
     private final AgentPlatform agentPlatform;
     private final DashboardService dashboardService;
+    private final PdfService pdfService;
 
     @GetMapping({"/suggestions/{id}", "/suggestions.html"})
     public String showSuggestions(@PathVariable(required = false) Long id,
@@ -207,6 +215,217 @@ public class RecommendationsController {
 
         redirectAttributes.addFlashAttribute("success", "Saved to dashboard!");
         return "redirect:/dashboard";
+    }
+
+    @GetMapping("/suggestions/{id}/download")
+    public ResponseEntity<ByteArrayResource> downloadSuggestionsPdf(@PathVariable Long id, HttpSession session) {
+        CareerSuggestions suggestions = (CareerSuggestions) session.getAttribute(SessionAttributes.SUGGESTIONS);
+
+        if (suggestions == null) {
+            log.warn("No suggestions found in session for download");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        try {
+            // Format the suggestions as text
+            StringBuilder content = new StringBuilder();
+            content.append("CAREER SUGGESTIONS\n");
+            content.append("==================\n\n");
+
+            content.append("RECOMMENDED JOB TITLES\n");
+            content.append("----------------------\n");
+            if (suggestions.suggestedTitles() != null) {
+                for (String title : suggestions.suggestedTitles()) {
+                    content.append("- ").append(title).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("SKILL CLUSTERS\n");
+            content.append("-------------\n");
+            if (suggestions.skillClusters() != null) {
+                for (String skill : suggestions.skillClusters()) {
+                    content.append("- ").append(skill).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("YOUR STRENGTHS\n");
+            content.append("-------------\n");
+            if (suggestions.strengths() != null) {
+                for (String strength : suggestions.strengths()) {
+                    content.append("- ").append(strength).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("AREAS TO IMPROVE\n");
+            content.append("----------------\n");
+            if (suggestions.weaknesses() != null) {
+                for (String weakness : suggestions.weaknesses()) {
+                    content.append("- ").append(weakness).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("CAREER DIRECTION\n");
+            content.append("----------------\n");
+            if (suggestions.careerDirection() != null) {
+                content.append(suggestions.careerDirection()).append("\n");
+            }
+
+            byte[] pdfData = pdfService.renderPdfFromText(content.toString());
+            ByteArrayResource resource = new ByteArrayResource(pdfData);
+
+            String filename = pdfService.buildFileName(null, "career-suggestions", "-report.pdf");
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .contentLength(pdfData.length)
+                    .body(resource);
+
+        } catch (IOException e) {
+            log.error("Failed to generate suggestions PDF", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/improve-score/{id}/download")
+    public ResponseEntity<ByteArrayResource> downloadImproveScorePdf(@PathVariable Long id, HttpSession session) {
+        ImproveScore improveScore = (ImproveScore) session.getAttribute(SessionAttributes.IMPROVE_SCORE);
+
+        if (improveScore == null) {
+            log.warn("No improve score data found in session for download");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        try {
+            // Format the improve score data as text
+            StringBuilder content = new StringBuilder();
+            content.append("IMPROVE YOUR FIT SCORE\n");
+            content.append("======================\n\n");
+
+            content.append("MISSING EXPERIENCE / SKILLS\n");
+            content.append("---------------------------\n");
+            if (improveScore.gaps() != null) {
+                for (String gap : improveScore.gaps()) {
+                    content.append("- ").append(gap).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("JD ALIGNMENT ISSUES\n");
+            content.append("-------------------\n");
+            if (improveScore.alignmentIssues() != null) {
+                for (String issue : improveScore.alignmentIssues()) {
+                    content.append("- ").append(issue).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("RECOMMENDED KEYWORDS\n");
+            content.append("--------------------\n");
+            if (improveScore.keywordSuggestions() != null) {
+                for (String keyword : improveScore.keywordSuggestions()) {
+                    content.append("- ").append(keyword).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("RECOMMENDED COURSES\n");
+            content.append("-------------------\n");
+            if (improveScore.courseRecommendations() != null) {
+                for (String course : improveScore.courseRecommendations()) {
+                    content.append("- ").append(course).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("ACHIEVEMENT ENHANCEMENTS\n");
+            content.append("------------------------\n");
+            if (improveScore.achievementAdvice() != null) {
+                content.append(improveScore.achievementAdvice()).append("\n");
+            }
+
+            byte[] pdfData = pdfService.renderPdfFromText(content.toString());
+            ByteArrayResource resource = new ByteArrayResource(pdfData);
+
+            String filename = pdfService.buildFileName(null, "improve-fit-score", "-report.pdf");
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .contentLength(pdfData.length)
+                    .body(resource);
+
+        } catch (IOException e) {
+            log.error("Failed to generate improve score PDF", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/get-ready/{id}/download")
+    public ResponseEntity<ByteArrayResource> downloadGetReadyPdf(@PathVariable Long id, HttpSession session) {
+        InterviewPrep interviewPrep = (InterviewPrep) session.getAttribute(SessionAttributes.INTERVIEW_PREP);
+
+        if (interviewPrep == null) {
+            log.warn("No interview prep data found in session for download");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        try {
+            // Format the interview prep data as text
+            StringBuilder content = new StringBuilder();
+            content.append("GET READY - INTERVIEW PREPARATION\n");
+            content.append("==================================\n\n");
+
+            content.append("YOUR 60-SECOND PITCH\n");
+            content.append("--------------------\n");
+            if (interviewPrep.pitch() != null) {
+                content.append(interviewPrep.pitch()).append("\n");
+            }
+            content.append("\n");
+
+            content.append("LIKELY INTERVIEW QUESTIONS\n");
+            content.append("--------------------------\n");
+            if (interviewPrep.questions() != null) {
+                for (String question : interviewPrep.questions()) {
+                    content.append("- ").append(question).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("STAR STORIES TO PREPARE\n");
+            content.append("-----------------------\n");
+            if (interviewPrep.starStories() != null) {
+                for (String story : interviewPrep.starStories()) {
+                    content.append("- ").append(story).append("\n");
+                }
+            }
+            content.append("\n");
+
+            content.append("RECOMMENDATIONS BEFORE THE INTERVIEW\n");
+            content.append("------------------------------------\n");
+            if (interviewPrep.prepAdvice() != null) {
+                content.append(interviewPrep.prepAdvice()).append("\n");
+            }
+
+            byte[] pdfData = pdfService.renderPdfFromText(content.toString());
+            ByteArrayResource resource = new ByteArrayResource(pdfData);
+
+            String filename = pdfService.buildFileName(null, "interview-prep", "-guide.pdf");
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .contentLength(pdfData.length)
+                    .body(resource);
+
+        } catch (IOException e) {
+            log.error("Failed to generate interview prep PDF", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     private void populateSuggestionsModel(Model model, CareerSuggestions suggestions, Long entryId) {
