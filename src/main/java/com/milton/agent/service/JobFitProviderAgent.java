@@ -77,7 +77,7 @@ public class JobFitProviderAgent {
 
         UpgradedCv upgradedCv = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5)
+                        .withModel(OpenAiModels.GPT_5_MINI)
                 )
                 .createObject(prompt, UpgradedCv.class);
 
@@ -107,7 +107,7 @@ public class JobFitProviderAgent {
 
         CareerSuggestions suggestions = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5)
+                        .withModel(OpenAiModels.GPT_41_MINI)
                 )
                 .createObject(prompt, CareerSuggestions.class);
 
@@ -148,7 +148,7 @@ public class JobFitProviderAgent {
 
         ImproveScore improveScore = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5)
+                        .withModel(OpenAiModels.GPT_41)
                 )
                 .createObject(prompt, ImproveScore.class);
 
@@ -189,7 +189,7 @@ public class JobFitProviderAgent {
 
         InterviewPrep interviewPrep = context.ai()
                 .withLlm(LlmOptions
-                        .withModel(OpenAiModels.GPT_5)
+                        .withModel(OpenAiModels.GPT_41)
                 )
                 .createObject(prompt, InterviewPrep.class);
 
