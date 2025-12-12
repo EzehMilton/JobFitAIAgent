@@ -4,7 +4,7 @@ import com.embabel.agent.api.annotation.AchievesGoal;
 import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.Agent;
 import com.embabel.agent.api.common.OperationContext;
-import com.embabel.agent.config.models.OpenAiModels;
+import com.embabel.agent.api.models.OpenAiModels;
 import com.embabel.common.ai.model.LlmOptions;
 import com.embabel.common.ai.model.Thinking;
 import com.milton.agent.config.PromptLoader;
