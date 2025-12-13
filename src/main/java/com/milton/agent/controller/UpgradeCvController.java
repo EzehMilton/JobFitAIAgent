@@ -5,6 +5,7 @@ import com.embabel.agent.core.AgentPlatform;
 import com.milton.agent.models.CvRewriteRequest;
 import com.milton.agent.models.UpgradedCv;
 import com.milton.agent.service.PdfService;
+import com.milton.agent.util.TimedOperation;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +62,10 @@ public class UpgradeCvController {
             );
 
             var rewriteInvocation = AgentInvocation.create(agentPlatform, UpgradedCv.class);
-            UpgradedCv upgradedCv = rewriteInvocation.invoke(rewriteRequest);
+            UpgradedCv upgradedCv;
+            try (TimedOperation ignored = TimedOperation.start(log, "Upgraded CV agent invocation")) {
+                upgradedCv = rewriteInvocation.invoke(rewriteRequest);
+            }
 
             String rewrittenText = (upgradedCv.cvText() == null || upgradedCv.cvText().isBlank())
                     ? originalCv
