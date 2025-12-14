@@ -20,7 +20,7 @@ public class DashboardEntry {
     private String roleTitle;
     private String companyName;
 
-    @Column(length = 2000)
+    @Column(length = 5000)
     private String jobDescription;
 
     private int score;
