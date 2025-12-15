@@ -7,6 +7,7 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.springframework.stereotype.Service;
+import com.milton.agent.util.TimedOperation;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,7 +20,8 @@ import java.util.List;
 public class PdfService {
 
     public byte[] renderPdfFromText(String text) throws IOException {
-        try (PDDocument document = new PDDocument(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+        try (TimedOperation ignored = TimedOperation.start(log, "PDF rendering");
+             PDDocument document = new PDDocument(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             PDType1Font font = PDType1Font.HELVETICA;
             float fontSize = 11f;
             float leading = 1.4f * fontSize;

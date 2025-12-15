@@ -9,6 +9,7 @@ import com.milton.agent.service.RateLimitService;
 import com.milton.agent.service.TextExtractor;
 import com.milton.agent.util.FileValidationUtil;
 import com.milton.agent.util.IpAddressUtil;
+import com.milton.agent.util.TimedOperation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -110,7 +111,9 @@ public class AnalysisController {
 
             log.info("UI request received. New CV uploaded: {}", cv.getOriginalFilename());
 
-            candidateCvText = textExtractor.extractText(cv);
+            try (TimedOperation ignored = TimedOperation.start(log, "CV text extraction")) {
+                candidateCvText = textExtractor.extractText(cv);
+            }
             cvFileName = cv.getOriginalFilename();
 
             session.setAttribute(SessionAttributes.CV_TEXT, candidateCvText);
@@ -130,7 +133,10 @@ public class AnalysisController {
 
         JobFitRequest jobFitRequest = new JobFitRequest(candidateCvText, jobDescriptionText, quickResponseRequested);
         var fitScoreAgentInvocation = AgentInvocation.create(agentPlatform, FitScore.class);
-        FitScore fitScore = fitScoreAgentInvocation.invoke(jobFitRequest);
+        FitScore fitScore;
+        try (TimedOperation ignored = TimedOperation.start(log, "Fit score agent invocation")) {
+            fitScore = fitScoreAgentInvocation.invoke(jobFitRequest);
+        }
 
         int score = fitScore.score();
         model.addAttribute("score", score);

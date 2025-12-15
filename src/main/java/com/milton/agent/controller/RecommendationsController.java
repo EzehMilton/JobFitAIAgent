@@ -11,6 +11,7 @@ import com.milton.agent.models.InterviewPrepRequest;
 import com.milton.agent.models.SuggestionsRequest;
 import com.milton.agent.service.DashboardService;
 import com.milton.agent.service.PdfService;
+import com.milton.agent.util.TimedOperation;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,7 +81,10 @@ public class RecommendationsController {
             );
 
             var suggestionsInvocation = AgentInvocation.create(agentPlatform, CareerSuggestions.class);
-            CareerSuggestions suggestions = suggestionsInvocation.invoke(suggestionsRequest);
+            CareerSuggestions suggestions;
+            try (TimedOperation ignored = TimedOperation.start(log, "Career suggestions agent invocation")) {
+                suggestions = suggestionsInvocation.invoke(suggestionsRequest);
+            }
 
             session.setAttribute(SessionAttributes.SUGGESTIONS, suggestions);
             populateSuggestionsModel(model, suggestions, id != null ? id : 1L);
@@ -133,7 +137,10 @@ public class RecommendationsController {
             );
 
             var improveScoreInvocation = AgentInvocation.create(agentPlatform, ImproveScore.class);
-            ImproveScore improveScore = improveScoreInvocation.invoke(improveScoreRequest);
+            ImproveScore improveScore;
+            try (TimedOperation ignored = TimedOperation.start(log, "Improve score agent invocation")) {
+                improveScore = improveScoreInvocation.invoke(improveScoreRequest);
+            }
 
             session.setAttribute(SessionAttributes.IMPROVE_SCORE, improveScore);
             populateImproveScoreModel(model, improveScore, id != null ? id : 1L);
@@ -186,7 +193,10 @@ public class RecommendationsController {
             );
 
             var interviewPrepInvocation = AgentInvocation.create(agentPlatform, InterviewPrep.class);
-            InterviewPrep interviewPrep = interviewPrepInvocation.invoke(interviewPrepRequest);
+            InterviewPrep interviewPrep;
+            try (TimedOperation ignored = TimedOperation.start(log, "Interview prep agent invocation")) {
+                interviewPrep = interviewPrepInvocation.invoke(interviewPrepRequest);
+            }
 
             session.setAttribute(SessionAttributes.INTERVIEW_PREP, interviewPrep);
             populateInterviewPrepModel(model, interviewPrep, id != null ? id : 1L);
