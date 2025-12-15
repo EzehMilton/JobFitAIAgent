@@ -31,7 +31,6 @@ public class DashboardService {
     private static final DateTimeFormatter STORED_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final DateTimeFormatter DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy, HH:mm");
     private static final int MAX_ROWS = 20;
-    private static final Long DUMMY_USER_ID = 1L;
 
     public DashboardService(DashboardEntryRepository repository,
                            @Value("${jobfit.score.suggestions-threshold:40}") int suggestionsThreshold,
@@ -55,19 +54,19 @@ public class DashboardService {
         this.partialThreshold = partialThreshold;
     }
 
-    public List<DashboardEntry> getAllEntries() {
-        return repository.findByUserIdOrderByIdDesc(DUMMY_USER_ID);
+    public List<DashboardEntry> getAllEntries(Long userId) {
+        return repository.findByUserIdOrderByIdDesc(userId);
     }
 
     public DashboardEntry getEntryById(Long id) {
         return repository.findById(id).orElse(null);
     }
 
-    public boolean canAddNewEntry() {
-        return repository.countByUserId(DUMMY_USER_ID) < MAX_ROWS;
+    public boolean canAddNewEntry(Long userId) {
+        return repository.countByUserId(userId) < MAX_ROWS;
     }
 
-    public void saveEntry(String role, String company, String jobDescription, int score) {
+    public void saveEntry(Long userId, String role, String company, String jobDescription, int score) {
 
         boolean showSuggestions = score < suggestionsThreshold;
         boolean showImproveScore = score >= improveScoreLower && score <= improveScoreUpper;
@@ -75,7 +74,7 @@ public class DashboardService {
         boolean showInterviewPrep = score > interviewPrepThreshold;
 
         DashboardEntry entry = DashboardEntry.builder()
-                .userId(DUMMY_USER_ID)
+                .userId(userId)
                 .roleTitle(role)
                 .companyName(company)
                 .jobDescription(jobDescription)
