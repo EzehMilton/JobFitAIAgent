@@ -34,6 +34,7 @@ class DashboardServiceTest {
     private final int excellentThreshold = 90;
     private final int goodThreshold = 70;
     private final int partialThreshold = 50;
+    private final Long testUserId = 12345L;
 
     @BeforeEach
     void setUp() {
@@ -62,7 +63,7 @@ class DashboardServiceTest {
         ArgumentCaptor<DashboardEntry> entryCaptor = ArgumentCaptor.forClass(DashboardEntry.class);
 
         // Act
-        dashboardService.saveEntry(role, company, jobDescription, score);
+        dashboardService.saveEntry(testUserId, role, company, jobDescription, score);
 
         // Assert
         verify(repository, times(1)).save(entryCaptor.capture());
@@ -90,7 +91,7 @@ class DashboardServiceTest {
         ArgumentCaptor<DashboardEntry> entryCaptor = ArgumentCaptor.forClass(DashboardEntry.class);
 
         // Act
-        dashboardService.saveEntry(role, company, jobDescription, score);
+        dashboardService.saveEntry(testUserId, role, company, jobDescription, score);
 
         // Assert
         verify(repository, times(1)).save(entryCaptor.capture());
@@ -114,7 +115,7 @@ class DashboardServiceTest {
         ArgumentCaptor<DashboardEntry> entryCaptor = ArgumentCaptor.forClass(DashboardEntry.class);
 
         // Act
-        dashboardService.saveEntry(role, company, jobDescription, score);
+        dashboardService.saveEntry(testUserId, role, company, jobDescription, score);
 
         // Assert
         verify(repository, times(1)).save(entryCaptor.capture());
@@ -138,7 +139,7 @@ class DashboardServiceTest {
         ArgumentCaptor<DashboardEntry> entryCaptor = ArgumentCaptor.forClass(DashboardEntry.class);
 
         // Act
-        dashboardService.saveEntry(role, company, jobDescription, score);
+        dashboardService.saveEntry(testUserId, role, company, jobDescription, score);
 
         // Assert
         verify(repository, times(1)).save(entryCaptor.capture());
@@ -159,7 +160,7 @@ class DashboardServiceTest {
         ArgumentCaptor<DashboardEntry> entryCaptor = ArgumentCaptor.forClass(DashboardEntry.class);
 
         // Act
-        dashboardService.saveEntry("Role", "Company", "Description", score);
+        dashboardService.saveEntry(testUserId, "Role", "Company", "Description", score);
 
         // Assert
         verify(repository, times(1)).save(entryCaptor.capture());
@@ -177,7 +178,7 @@ class DashboardServiceTest {
         ArgumentCaptor<DashboardEntry> entryCaptor = ArgumentCaptor.forClass(DashboardEntry.class);
 
         // Act
-        dashboardService.saveEntry("Role", "Company", "Description", score);
+        dashboardService.saveEntry(testUserId, "Role", "Company", "Description", score);
 
         // Assert
         verify(repository, times(1)).save(entryCaptor.capture());
@@ -196,7 +197,7 @@ class DashboardServiceTest {
         ArgumentCaptor<DashboardEntry> entryCaptor = ArgumentCaptor.forClass(DashboardEntry.class);
 
         // Act
-        dashboardService.saveEntry("Role", "Company", "Description", score);
+        dashboardService.saveEntry(testUserId, "Role", "Company", "Description", score);
 
         // Assert
         verify(repository, times(1)).save(entryCaptor.capture());
@@ -214,7 +215,7 @@ class DashboardServiceTest {
         ArgumentCaptor<DashboardEntry> entryCaptor = ArgumentCaptor.forClass(DashboardEntry.class);
 
         // Act
-        dashboardService.saveEntry("Role", "Company", "Description", score);
+        dashboardService.saveEntry(testUserId, "Role", "Company", "Description", score);
 
         // Assert
         verify(repository, times(1)).save(entryCaptor.capture());
@@ -232,7 +233,7 @@ class DashboardServiceTest {
         ArgumentCaptor<DashboardEntry> entryCaptor = ArgumentCaptor.forClass(DashboardEntry.class);
 
         // Act
-        dashboardService.saveEntry("Role", "Company", "Description", score);
+        dashboardService.saveEntry(testUserId, "Role", "Company", "Description", score);
 
         // Assert
         verify(repository, times(1)).save(entryCaptor.capture());
@@ -249,16 +250,16 @@ class DashboardServiceTest {
                 DashboardEntry.builder().id(1L).roleTitle("Role 1").score(50).build(),
                 DashboardEntry.builder().id(2L).roleTitle("Role 2").score(80).build()
         );
-        when(repository.findByUserIdOrderByIdDesc(1L)).thenReturn(mockEntries);
+        when(repository.findByUserIdOrderByIdDesc(testUserId)).thenReturn(mockEntries);
 
         // Act
-        List<DashboardEntry> result = dashboardService.getAllEntries();
+        List<DashboardEntry> result = dashboardService.getAllEntries(testUserId);
 
         // Assert
         assertEquals(2, result.size());
         assertEquals("Role 1", result.get(0).getRoleTitle());
         assertEquals("Role 2", result.get(1).getRoleTitle());
-        verify(repository, times(1)).findByUserIdOrderByIdDesc(1L);
+        verify(repository, times(1)).findByUserIdOrderByIdDesc(testUserId);
     }
 
     @Test
@@ -299,36 +300,36 @@ class DashboardServiceTest {
     @Test
     void canAddNewEntry_ShouldReturnTrue_WhenBelowMaxRows() {
         // Arrange
-        when(repository.countByUserId(1L)).thenReturn(15L);
+        when(repository.countByUserId(testUserId)).thenReturn(15L);
 
         // Act
-        boolean result = dashboardService.canAddNewEntry();
+        boolean result = dashboardService.canAddNewEntry(testUserId);
 
         // Assert
         assertTrue(result, "Should be able to add new entry when count is below 20");
-        verify(repository, times(1)).countByUserId(1L);
+        verify(repository, times(1)).countByUserId(testUserId);
     }
 
     @Test
     void canAddNewEntry_ShouldReturnFalse_WhenAtMaxRows() {
         // Arrange
-        when(repository.countByUserId(1L)).thenReturn(20L);
+        when(repository.countByUserId(testUserId)).thenReturn(20L);
 
         // Act
-        boolean result = dashboardService.canAddNewEntry();
+        boolean result = dashboardService.canAddNewEntry(testUserId);
 
         // Assert
         assertFalse(result, "Should not be able to add new entry when count is at 20");
-        verify(repository, times(1)).countByUserId(1L);
+        verify(repository, times(1)).countByUserId(testUserId);
     }
 
     @Test
     void canAddNewEntry_ShouldReturnFalse_WhenAboveMaxRows() {
         // Arrange
-        when(repository.countByUserId(1L)).thenReturn(25L);
+        when(repository.countByUserId(testUserId)).thenReturn(25L);
 
         // Act
-        boolean result = dashboardService.canAddNewEntry();
+        boolean result = dashboardService.canAddNewEntry(testUserId);
 
         // Assert
         assertFalse(result, "Should not be able to add new entry when count exceeds 20");
@@ -337,10 +338,10 @@ class DashboardServiceTest {
     @Test
     void canAddNewEntry_ShouldReturnTrue_WhenZeroEntries() {
         // Arrange
-        when(repository.countByUserId(1L)).thenReturn(0L);
+        when(repository.countByUserId(testUserId)).thenReturn(0L);
 
         // Act
-        boolean result = dashboardService.canAddNewEntry();
+        boolean result = dashboardService.canAddNewEntry(testUserId);
 
         // Assert
         assertTrue(result, "Should be able to add entry when no entries exist");

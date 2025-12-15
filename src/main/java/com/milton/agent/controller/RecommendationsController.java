@@ -214,14 +214,17 @@ public class RecommendationsController {
                                   @RequestParam String company,
                                   @RequestParam String jobDescription,
                                   @RequestParam int score,
+                                  HttpSession session,
                                   RedirectAttributes redirectAttributes) {
 
-        if (!dashboardService.canAddNewEntry()) {
+        Long userId = getUserId(session);
+
+        if (!dashboardService.canAddNewEntry(userId)) {
             redirectAttributes.addFlashAttribute("error", "You have reached the maximum of 20 saved results.");
             return "redirect:/dashboard";
         }
 
-        dashboardService.saveEntry(role, company, jobDescription, score);
+        dashboardService.saveEntry(userId, role, company, jobDescription, score);
 
         redirectAttributes.addFlashAttribute("success", "Saved to dashboard!");
         return "redirect:/dashboard";
@@ -482,5 +485,13 @@ public class RecommendationsController {
                     interviewPrep.prepAdvice() : "Research the company culture and review your key achievements relevant to this role.";
             public final Long id = entryId;
         });
+    }
+
+    /**
+     * Converts session ID to a consistent Long userId.
+     * Each unique session gets a unique userId based on session ID hash.
+     */
+    private Long getUserId(HttpSession session) {
+        return (long) Math.abs(session.getId().hashCode());
     }
 }
