@@ -24,6 +24,9 @@ public class DashboardService {
     private final int cvUpgradeLower;
     private final int cvUpgradeUpper;
     private final int interviewPrepThreshold;
+    private final int excellentThreshold;
+    private final int goodThreshold;
+    private final int partialThreshold;
 
     private static final DateTimeFormatter STORED_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final DateTimeFormatter DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy, HH:mm");
@@ -36,7 +39,10 @@ public class DashboardService {
                            @Value("${jobfit.score.improve-score-upper:74}") int improveScoreUpper,
                            @Value("${jobfit.score.cv-upgrade-lower:75}") int cvUpgradeLower,
                            @Value("${jobfit.score.cv-upgrade-upper:85}") int cvUpgradeUpper,
-                           @Value("${jobfit.score.interview-prep-threshold:85}") int interviewPrepThreshold) {
+                           @Value("${jobfit.score.interview-prep-threshold:85}") int interviewPrepThreshold,
+                           @Value("${jobfit.score.excellent-threshold:90}") int excellentThreshold,
+                           @Value("${jobfit.score.good-threshold:70}") int goodThreshold,
+                           @Value("${jobfit.score.partial-threshold:50}") int partialThreshold) {
         this.repository = repository;
         this.suggestionsThreshold = suggestionsThreshold;
         this.improveScoreLower = improveScoreLower;
@@ -44,6 +50,9 @@ public class DashboardService {
         this.cvUpgradeLower = cvUpgradeLower;
         this.cvUpgradeUpper = cvUpgradeUpper;
         this.interviewPrepThreshold = interviewPrepThreshold;
+        this.excellentThreshold = excellentThreshold;
+        this.goodThreshold = goodThreshold;
+        this.partialThreshold = partialThreshold;
     }
 
     public List<DashboardEntry> getAllEntries() {
@@ -71,6 +80,7 @@ public class DashboardService {
                 .companyName(company)
                 .jobDescription(jobDescription)
                 .score(score)
+                .recommendation(calculateRecommendation(score))
                 .suggestionsAvailable(showSuggestions)
                 .improveScoreAvailable(showImproveScore)
                 .cvUpgradeAvailable(showUpgrade)
@@ -79,6 +89,18 @@ public class DashboardService {
                 .build();
 
         repository.save(entry);
+    }
+
+    private String calculateRecommendation(int score) {
+        if (score >= excellentThreshold) {
+            return "🟢 Apply Now";
+        } else if (score >= goodThreshold) {
+            return "🟠 Consider Applying";
+        } else if (score >= partialThreshold) {
+            return "🔵 Not Ready Yet";
+        } else {
+            return "🔴 Not Recommended";
+        }
     }
 
     public int getTotalAnalyses(List<DashboardEntry> entries) {

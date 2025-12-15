@@ -94,6 +94,22 @@
             text-decoration: none;
             color: #667eea;
         }
+        .recommendation-text {
+            font-weight: 600;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        .btn-tailor-cv {
+            background-color: #0056b3 !important;
+            border-color: #0056b3 !important;
+            font-weight: 600 !important;
+            box-shadow: 0 2px 6px rgba(0, 86, 179, 0.25);
+        }
+        .btn-tailor-cv:hover {
+            background-color: #004494 !important;
+            border-color: #004494 !important;
+            box-shadow: 0 3px 8px rgba(0, 86, 179, 0.35);
+        }
         /* Loading Overlay */
         .loading-overlay {
             display: none;
@@ -203,6 +219,7 @@
                         <th>Role</th>
                         <th>Company</th>
                         <th>Score</th>
+                        <th>Recommendation</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
@@ -211,11 +228,14 @@
                         <td th:text="${entry.createdAt}"></td>
                         <td th:text="${entry.roleTitle}"></td>
                         <td th:text="${entry.companyName}"></td>
-                        <td th:text="${entry.score}"></td>
+                        <td th:text="${entry.score + '%'}"></td>
+                        <td>
+                            <span class="recommendation-text" th:text="${entry.recommendation}"></span>
+                        </td>
                         <td>
                             <a th:if="${entry.suggestionsAvailable}" class="btn btn-sm btn-warning action-btn" data-action="suggestions" th:href="@{'/suggestions/' + ${entry.id}}">Suggestions</a>
                             <a th:if="${entry.improveScoreAvailable}" class="btn btn-sm btn-info action-btn" data-action="improve" th:href="@{'/improve-score/' + ${entry.id}}">Improve Score</a>
-                            <a th:if="${entry.cvUpgradeAvailable}" class="btn btn-sm btn-primary action-btn" data-action="upgrade" th:href="@{/upgrade_cv.html}">Tailor CV</a>
+                            <a th:if="${entry.cvUpgradeAvailable}" class="btn btn-sm btn-primary btn-tailor-cv action-btn" data-action="upgrade" th:href="@{/upgrade_cv.html}">Tailor CV</a>
                             <a th:if="${entry.interviewPrepAvailable}" class="btn btn-sm btn-success action-btn" data-action="getready" th:href="@{'/get-ready/' + ${entry.id}}">Get Ready</a>
                         </td>
                     </tr>
