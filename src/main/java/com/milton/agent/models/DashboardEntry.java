@@ -25,6 +25,9 @@ public class DashboardEntry {
 
     private int score;
 
+    @Column(length = 100)
+    private String recommendation;  // e.g. "🟢 Apply Now", "🟠 Consider Applying", etc.
+
     private boolean suggestionsAvailable;        // for scores < 40
     private boolean improveScoreAvailable;       // for scores 40-74
     private boolean cvUpgradeAvailable;          // for scores 75-85
