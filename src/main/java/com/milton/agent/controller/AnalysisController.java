@@ -40,16 +40,16 @@ public class AnalysisController {
             model.addAttribute("storedCvName", storedCvName);
         }
 
-        String ipAddress = IpAddressUtil.getClientIpAddress(request);
-        int remainingRequests = rateLimitService.getRemainingRequests(ipAddress);
-        int usedRequests = rateLimitService.getRequestCount(ipAddress);
+        Long userId = getUserId(session);
+        int remainingRequests = rateLimitService.getRemainingRequests(userId);
+        int usedRequests = rateLimitService.getRequestCount(userId);
         int maxDailyScans = rateLimitService.getMaxRequestsPerDay();
 
         model.addAttribute("remainingRequests", remainingRequests);
         model.addAttribute("usedRequests", usedRequests);
         model.addAttribute("maxDailyScans", maxDailyScans);
 
-        log.debug("IP {} - Used: {}/{}, Remaining: {}", ipAddress, usedRequests, maxDailyScans, remainingRequests);
+        log.debug("User {} - Used: {}/{}, Remaining: {}", userId, usedRequests, maxDailyScans, remainingRequests);
         return "index";
     }
 
@@ -64,12 +64,12 @@ public class AnalysisController {
                                 HttpSession session,
                                 Model model) throws IOException {
 
-        String ipAddress = IpAddressUtil.getClientIpAddress(request);
-        log.info("Request from IP: {}", ipAddress);
+        Long userId = getUserId(session);
+        log.info("Request from user: {}", userId);
         model.addAttribute("maxDailyScans", rateLimitService.getMaxRequestsPerDay());
 
-        if (!rateLimitService.isAllowed(ipAddress)) {
-            int usedRequests = rateLimitService.getRequestCount(ipAddress);
+        if (!rateLimitService.isAllowed(userId)) {
+            int usedRequests = rateLimitService.getRequestCount(userId);
             int maxDailyScans = rateLimitService.getMaxRequestsPerDay();
             model.addAttribute("error", "Rate limit exceeded. You have used all " + maxDailyScans + " free analyses. Please try again tomorrow.");
             model.addAttribute("rateLimitExceeded", true);
@@ -82,7 +82,7 @@ public class AnalysisController {
                 model.addAttribute("storedCvName", storedCvName);
             }
 
-            log.warn("Rate limit exceeded for IP: {}", ipAddress);
+            log.warn("Rate limit exceeded for user: {}", userId);
             return "index";
         }
 
@@ -159,13 +159,21 @@ public class AnalysisController {
         session.removeAttribute(SessionAttributes.UPGRADED_SUMMARY);
         model.addAttribute("storedCvName", cvFileName);
 
-        int remainingRequests = rateLimitService.getRemainingRequests(ipAddress);
-        int usedRequests = rateLimitService.getRequestCount(ipAddress);
+        int remainingRequests = rateLimitService.getRemainingRequests(userId);
+        int usedRequests = rateLimitService.getRequestCount(userId);
         model.addAttribute("remainingRequests", remainingRequests);
         model.addAttribute("usedRequests", usedRequests);
         model.addAttribute("maxDailyScans", rateLimitService.getMaxRequestsPerDay());
 
-        log.info("Analysis complete for IP: {}. Remaining requests: {}", ipAddress, remainingRequests);
+        log.info("Analysis complete for user: {}. Remaining requests: {}", userId, remainingRequests);
         return "index";
+    }
+
+    /**
+     * Converts session ID to a consistent Long userId.
+     * Each unique session gets a unique userId based on session ID hash.
+     */
+    private Long getUserId(HttpSession session) {
+        return (long) Math.abs(session.getId().hashCode());
     }
 }
