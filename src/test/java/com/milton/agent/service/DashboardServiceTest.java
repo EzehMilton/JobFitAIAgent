@@ -31,6 +31,9 @@ class DashboardServiceTest {
     private final int cvUpgradeLower = 75;
     private final int cvUpgradeUpper = 85;
     private final int interviewPrepThreshold = 85;
+    private final int excellentThreshold = 90;
+    private final int goodThreshold = 70;
+    private final int partialThreshold = 50;
 
     @BeforeEach
     void setUp() {
@@ -41,7 +44,10 @@ class DashboardServiceTest {
                 improveScoreUpper,
                 cvUpgradeLower,
                 cvUpgradeUpper,
-                interviewPrepThreshold
+                interviewPrepThreshold,
+                excellentThreshold,
+                goodThreshold,
+                partialThreshold
         );
     }
 
